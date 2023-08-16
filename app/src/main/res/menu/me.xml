@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:showIn="navigation_view">
+
+    <item android:title="1" />
+    <item android:title="2" />
+    <item android:title="3" />
+    <item android:title="4" />
+</menu>

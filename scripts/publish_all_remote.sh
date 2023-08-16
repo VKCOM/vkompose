@@ -1,0 +1,21 @@
+./gradlew :gradle-plugin:sub-plugin:composable-skippability-checker:publishAllPublicationsToPublicRemoteRepository \
+./gradlew :gradle-plugin:sub-plugin:compose-test-tag:applier:publishAllPublicationsToPublicRemoteRepository
+./gradlew :gradle-plugin:sub-plugin:compose-test-tag:cleaner:publishAllPublicationsToPublicRemoteRepository
+./gradlew :gradle-plugin:sub-plugin:compose-test-tag:drawer:publishAllPublicationsToPublicRemoteRepository
+./gradlew :gradle-plugin:sub-plugin:compose-source-information:cleaner:publishAllPublicationsToPublicRemoteRepository
+./gradlew :gradle-plugin:sub-plugin:recompose:highlighter:publishAllPublicationsToPublicRemoteRepository
+./gradlew :gradle-plugin:sub-plugin:recompose:logger:publishAllPublicationsToPublicRemoteRepository
+./gradlew :gradle-plugin:composite:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:composable-skippability-checker:plugin:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:compose-test-tag:cleaner:plugin:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:compose-test-tag:applier:plugin:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:compose-test-tag:applier:runtime:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:compose-test-tag:drawer:plugin:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:compose-test-tag:drawer:runtime:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:compose-source-information:cleaner:plugin:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:recompose:highlighter:plugin:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:recompose:highlighter:runtime:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:recompose:logger:plugin:publishAllPublicationsToPublicRemoteRepository
+./gradlew :compiler-plugin:recompose:logger:runtime:publishAllPublicationsToPublicRemoteRepository
+./gradlew :rules:common:publishAllPublicationsToPublicRemoteRepository
+./gradlew :rules:detekt:publishAllPublicationsToPublicRemoteRepository

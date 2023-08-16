@@ -1,0 +1,26 @@
+<idea-plugin require-restart="false">
+    <id>com.vk.idea.plugin.vkompose</id>
+
+    <name>VKompose</name>
+    <vendor url="vk.com">VKontakte</vendor>
+    <description>Idea plugin with utilities for Jetpack Compose</description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService
+                serviceImplementation="com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent"/>
+
+        <applicationConfigurable id="com.vk.idea.plugin.vkompose.test.tag.preferences"
+                                 displayName="VKompose"
+                                 instance="com.vk.idea.plugin.vkompose.settings.ComposeConfigurable"
+                                 groupId="root"/>
+
+        <codeInsight.lineMarkerProvider language="kotlin"
+                                        implementationClass="com.vk.idea.plugin.vkompose.marker.ComposeTestTagLineMarker"/>
+
+        <annotator language="kotlin" implementationClass="com.vk.idea.plugin.vkompose.annotator.ComposeFunctionParamsStabilityAnnotator"/>
+
+    </extensions>
+</idea-plugin>

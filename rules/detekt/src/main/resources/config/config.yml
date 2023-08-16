@@ -1,0 +1,4 @@
+vkompose:
+  NonSkippableComposable:
+    active: true
+    ignoredClasses: []
