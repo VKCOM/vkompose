@@ -17,8 +17,8 @@ import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
 import org.jetbrains.kotlin.idea.caches.resolve.findModuleDescriptor
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
 import org.jetbrains.kotlin.idea.inspections.RemoveAnnotationFix
-import org.jetbrains.kotlin.idea.highlighter.AnnotationHostKind
-import org.jetbrains.kotlin.idea.quickfix.KotlinSuppressIntentionAction
+import org.jetbrains.kotlin.idea.inspections.suppress.AnnotationHostKind
+import org.jetbrains.kotlin.idea.inspections.suppress.KotlinSuppressIntentionAction
 import org.jetbrains.kotlin.idea.quickfix.RemoveArgumentFix
 import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
 import org.jetbrains.kotlin.lexer.KtTokens
