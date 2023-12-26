@@ -1,3 +1,5 @@
+import org.gradle.accessors.dm.LibrariesForLibs
+
 plugins {
     id("org.jetbrains.kotlin.android")
     id("com.android.library")
@@ -24,6 +26,6 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.2" // compose-compiler-version
+        kotlinCompilerExtensionVersion = the<LibrariesForLibs>().versions.compose.compiler.get()
     }
 }
