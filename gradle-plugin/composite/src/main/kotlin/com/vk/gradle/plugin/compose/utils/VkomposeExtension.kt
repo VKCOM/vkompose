@@ -1,40 +1,57 @@
 package com.vk.gradle.plugin.compose.utils
 
+import com.github.javaparser.printer.lexicalpreservation.LexicalPreservingPrinter.setup
 import com.vk.gradle.plugin.compose.utils.settings.RecomposeSetting
 import com.vk.gradle.plugin.compose.utils.settings.Setting
 import com.vk.gradle.plugin.compose.utils.settings.SkippabilityChecksSetting
 import com.vk.gradle.plugin.compose.utils.settings.SourceInfoCleanSetting
 import com.vk.gradle.plugin.compose.utils.settings.TestTagSetting
+import org.gradle.api.Project
 import kotlin.reflect.KClass
 
 abstract class VkomposeExtension {
-    internal val settings = mutableMapOf<KClass<out Setting>, Setting>()
+    internal val settings = mutableMapOf(
+        RecomposeSetting::class to RecomposeSetting(),
+        TestTagSetting::class to TestTagSetting(),
+        SourceInfoCleanSetting::class to SourceInfoCleanSetting().apply { isEnabled = false },
+        SkippabilityChecksSetting::class to SkippabilityChecksSetting().apply { isEnabled = false },
+    )
 
-    var sourceInformationClean: Boolean
+    var Project.sourceInformationClean: Boolean
         get() = settings[SourceInfoCleanSetting::class]?.isEnabled ?: false
         set(value) {
-            settings[SourceInfoCleanSetting::class] = SourceInfoCleanSetting().apply {
+            val setting = SourceInfoCleanSetting().apply {
                 isEnabled = value
             }
+            setting.setup(this)
+            settings[SourceInfoCleanSetting::class] = setting
         }
 
-    var skippabilityCheck: Boolean
+    var Project.skippabilityCheck: Boolean
         get() = settings[SkippabilityChecksSetting::class]?.isEnabled ?: false
         set(value) {
-            settings[SkippabilityChecksSetting::class] = SkippabilityChecksSetting().apply {
+            val setting = SkippabilityChecksSetting().apply {
                 isEnabled = value
             }
+            setting.setup(this)
+            settings[SkippabilityChecksSetting::class] = setting
         }
 
-    fun recompose(configure: RecomposeSetting.() -> Unit) {
-        settings[RecomposeSetting::class] = RecomposeSetting().apply { configure() }
+    fun Project.recompose(configure: RecomposeSetting.() -> Unit) {
+        val setting = RecomposeSetting().apply(configure)
+        setting.setup(this)
+        settings[RecomposeSetting::class] = setting
     }
 
-    fun testTag(configure: TestTagSetting.() -> Unit) {
-        settings[TestTagSetting::class] = TestTagSetting().apply { configure() }
+    fun Project.testTag(configure: TestTagSetting.() -> Unit) {
+        val setting = TestTagSetting().apply(configure)
+        setting.setup(this)
+        settings[TestTagSetting::class] = setting
     }
 
-    fun skippabilityCheck(configure: SkippabilityChecksSetting.() -> Unit) {
-        settings[SkippabilityChecksSetting::class] = SkippabilityChecksSetting().apply { configure() }
+    fun Project.skippabilityCheck(configure: SkippabilityChecksSetting.() -> Unit) {
+        val setting = SkippabilityChecksSetting().apply(configure)
+        setting.setup(this)
+        settings[SkippabilityChecksSetting::class] = setting
     }
 }
