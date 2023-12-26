@@ -1,6 +1,7 @@
 plugins {
     `kotlin-dsl`
     id("convention.publish")
+    id("convention.buildconfig")
 }
 
 gradlePlugin {

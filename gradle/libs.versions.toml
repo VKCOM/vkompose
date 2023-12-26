@@ -13,6 +13,7 @@ appcompat = "1.6.1"
 material = "1.9.0"
 ktlint = "0.48.2"
 detekt = "1.23.3"
+buildconfig = "5.1.0"
 publish = "0.21.0" # todo next versions contain issues with sync. should report issue later
 
 [libraries]
@@ -41,6 +42,7 @@ gradle-kotlin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", 
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-android = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 gradle-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "publish" }
+gradle-buildconfig = { module = "com.github.gmazzo.buildconfig:plugin", version.ref = "buildconfig" }
 detekt-core = { module = "io.gitlab.arturbosch.detekt:detekt-core", version.ref = "detekt" }
 ktlint-core = { module = "com.pinterest.ktlint:ktlint-core", version.ref = "ktlint" }
 
@@ -51,4 +53,5 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
 

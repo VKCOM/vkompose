@@ -10,6 +10,7 @@ dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
     repositories {
         google()
+        gradlePluginPortal()
         mavenCentral()
     }
     versionCatalogs {
