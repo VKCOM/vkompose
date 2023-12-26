@@ -1,5 +1,6 @@
 package com.vk.gradle.plugin.compose.test.tag.cleaner
 
+import com.vk.compose_test_tag_cleaner.cleaner.BuildConfig
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
@@ -40,7 +41,7 @@ class ComposeTestTagCleanerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "com.vk.compose-test-tag-cleaner",
         artifactId = "compiler-plugin",
-        version = "0.1"
+        version = BuildConfig.VERSION
     )
 
 }

@@ -1,5 +1,6 @@
 package com.vk.gradle.plugin.recompose.logger
 
+import com.vk.recompose_logger.logger.BuildConfig
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.dependencies
@@ -42,12 +43,12 @@ class RecomposeLoggerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "com.vk.recompose-logger",
         artifactId = "compiler-plugin",
-        version = "0.1"
+        version = BuildConfig.VERSION
     )
 
     private fun Project.applyRuntimeDependency() {
         dependencies {
-            add("implementation", "com.vk.recompose-logger:compiler-runtime:0.1")
+            add("implementation", "com.vk.recompose-logger:compiler-runtime:${BuildConfig.VERSION}")
         }
     }
 

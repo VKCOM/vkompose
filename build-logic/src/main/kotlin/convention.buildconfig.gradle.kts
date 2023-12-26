@@ -3,5 +3,9 @@ plugins {
 }
 
 buildConfig {
+    useKotlinOutput {
+        internalVisibility = true
+    }
+
     buildConfigField("VERSION", properties["VERSION_NAME"].toString())
 }

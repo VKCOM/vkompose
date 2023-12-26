@@ -1,5 +1,6 @@
 package com.vk.gradle.plugin.compose.test.tag.applier
 
+import com.vk.compose_test_tag_applier.applier.BuildConfig
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.dependencies
@@ -43,13 +44,13 @@ class ComposeTestTagApplierPlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "com.vk.compose-test-tag-applier",
         artifactId = "compiler-plugin",
-        version = "0.1"
+        version = BuildConfig.VERSION
     )
 
 
     private fun Project.applyRuntimeDependency() {
         dependencies {
-            add("implementation", "com.vk.compose-test-tag-applier:compiler-runtime:0.1")
+            add("implementation", "com.vk.compose-test-tag-applier:compiler-runtime:${BuildConfig.VERSION}")
         }
     }
 

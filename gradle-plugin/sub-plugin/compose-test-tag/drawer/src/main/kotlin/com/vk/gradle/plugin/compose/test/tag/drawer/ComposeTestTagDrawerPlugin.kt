@@ -1,5 +1,6 @@
 package com.vk.gradle.plugin.compose.test.tag.drawer
 
+import com.vk.compose_test_tag_drawer.drawer.BuildConfig
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.dependencies
@@ -43,13 +44,13 @@ class ComposeTestTagDrawerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "com.vk.compose-test-tag-drawer",
         artifactId = "compiler-plugin",
-        version = "0.1"
+        version = BuildConfig.VERSION
     )
 
 
     private fun Project.applyRuntimeDependency() {
         dependencies {
-            add("implementation", "com.vk.compose-test-tag-drawer:compiler-runtime:0.1")
+            add("implementation", "com.vk.compose-test-tag-drawer:compiler-runtime:${BuildConfig.VERSION}")
         }
     }
 

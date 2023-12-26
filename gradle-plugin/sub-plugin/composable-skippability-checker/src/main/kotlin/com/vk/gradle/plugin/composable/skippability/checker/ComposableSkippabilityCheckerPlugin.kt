@@ -1,5 +1,6 @@
 package com.vk.gradle.plugin.composable.skippability.checker
 
+import com.vk.composable_skippability_checker.composable_skippability_checker.BuildConfig
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
@@ -55,7 +56,7 @@ class ComposableSkippabilityCheckerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "com.vk.composable-skippability-checker",
         artifactId = "compiler-plugin",
-        version = "0.1"
+        version = BuildConfig.VERSION
     )
 
 }

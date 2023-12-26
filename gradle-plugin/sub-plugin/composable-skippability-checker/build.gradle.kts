@@ -1,5 +1,6 @@
 plugins {
     `kotlin-dsl`
+    id("org.jetbrains.kotlin.jvm")
     id("convention.publish")
     id("convention.buildconfig")
 }

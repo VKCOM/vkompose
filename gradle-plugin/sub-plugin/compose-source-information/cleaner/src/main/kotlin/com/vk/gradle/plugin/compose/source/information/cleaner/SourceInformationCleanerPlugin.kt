@@ -1,5 +1,6 @@
 package com.vk.gradle.plugin.compose.source.information.cleaner
 
+import com.vk.compose_source_information_cleaner.cleaner.BuildConfig
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
@@ -39,7 +40,7 @@ class SourceInformationCleanerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "com.vk.compose-source-information-cleaner",
         artifactId = "compiler-plugin",
-        version = "0.1"
+        version = BuildConfig.VERSION
     )
 
 }
