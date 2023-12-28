@@ -15,8 +15,6 @@ fun Modifier.applyTestTag(tag: String): Modifier = inspectable(debugInspectorInf
 }) {
     Modifier.semantics {
         testTag = tag
-        // иначе compose мержит сверху вниз, чтобы функции выше не знали какие тэги у функции ниже
-        // делаем доступным все тэги на любом уровне иерархии
         testTagsAsResourceId = true
     }
 }

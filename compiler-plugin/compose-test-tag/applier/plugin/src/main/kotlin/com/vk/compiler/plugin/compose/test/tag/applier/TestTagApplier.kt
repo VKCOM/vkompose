@@ -4,23 +4,30 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ir.isAnonymous
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
+import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.declarations.name
+import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
+import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
 import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
-import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isVararg
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.CallableId
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.popLast
@@ -30,7 +37,15 @@ internal class TestTagApplier(
 ) : IrElementTransformerVoid() {
 
     private val applyTagFunction by lazy {
-        pluginContext.referenceFunctions(applyTafCallableId).firstOrNull()?.owner?.symbol
+        pluginContext.referenceFunctions(applyTagCallableId).firstOrNull()?.owner?.symbol
+    }
+
+    private val modifierObjectClass by lazy {
+        pluginContext.referenceClass(modifierObjectClassId)
+    }
+
+    private val thenFunction by lazy {
+        pluginContext.referenceFunctions(thenFuncCallableId).firstOrNull()?.owner?.symbol
     }
 
     private val functionsStack = mutableListOf<IrFunction>()
@@ -75,7 +90,7 @@ internal class TestTagApplier(
                 continue
             }
 
-            val modifiedArgumentExpression = createTestTaggedArgument(
+            val modifiedArgumentExpression = modifyExpressionForTestTag(
                 parameter,
                 argumentExpression,
                 createTag(this, lastFile, lastFunction),
@@ -86,7 +101,7 @@ internal class TestTagApplier(
         return this
     }
 
-    private fun createTestTaggedArgument(
+    private fun modifyExpressionForTestTag(
         parameter: IrValueParameter,
         argumentExpression: IrExpression,
         tag: String,
@@ -101,54 +116,148 @@ internal class TestTagApplier(
         // Column(modifier) -> skip
         // Column(modifier.fillMaxSize()) -> skip
 
-        if (argumentExpression is IrCall) {
-            val topmostReceiverCall = argumentExpression.getTopmostReceiverCall()
-            val topmostReceiverObject =
-                topmostReceiverCall.extensionReceiver ?: topmostReceiverCall.dispatchReceiver
+        // val tmp_modifier: Modifier.Object = Modifier.Object
+        // Column(temp_modifier) -> Column(Modifier.applyTestTag(tag))
 
-            if (topmostReceiverObject?.type?.isComposeModifierObject() != true) return null
+        // val tmp_modifier: Modifier = Modifier.applyTestTag(tag).fillMaxSize()
+        // Column(temp_modifier) -> Column(tmp_modifier)
 
-            val applyTagCall = IrCallImpl(
-                startOffset = UNDEFINED_OFFSET,
-                endOffset = UNDEFINED_OFFSET,
-                type = parameter.type,
-                symbol = applyTagFunction,
-                typeArgumentsCount = 0,
-                valueArgumentsCount = 1,
-            ).apply {
-                extensionReceiver = topmostReceiverObject
-                putValueArgument(0, tag.toIrConst(pluginContext.irBuiltIns.stringType))
-            }
-
-            // if top function is declared in Modifier
-            if (topmostReceiverCall.dispatchReceiver == topmostReceiverObject) {
-                topmostReceiverCall.dispatchReceiver = applyTagCall
-            } else {
-                // if top function is extension for Modifier
-                topmostReceiverCall.extensionReceiver = applyTagCall
-            }
-            return null
+        return when (argumentExpression) {
+            is IrGetValue -> modifyIrGetValue(argumentExpression, parameter, tag, applyTagFunction)
+            is IrCall -> modifyIrCall(argumentExpression, parameter, tag, applyTagFunction)
+            is IrGetObjectValue -> modifierIrObject(argumentExpression, parameter, applyTagFunction, tag)
+            else -> null
         }
-
-        if (argumentExpression is IrGetObjectValue && argumentExpression.type.isComposeModifierObject()) {
-            val applyTagCall = IrCallImpl(
-                startOffset = UNDEFINED_OFFSET,
-                endOffset = UNDEFINED_OFFSET,
-                type = parameter.type,
-                symbol = applyTagFunction,
-                typeArgumentsCount = 0,
-                valueArgumentsCount = 1,
-            ).apply {
-                extensionReceiver = argumentExpression
-                putValueArgument(0, tag.toIrConst(pluginContext.irBuiltIns.stringType))
-            }
-            return applyTagCall
-        }
-
-        return null
 
     }
 
+    private fun modifyIrGetValue(
+        argumentExpression: IrGetValue,
+        parameter: IrValueParameter,
+        tag: String,
+        applyTagFunction: IrSimpleFunctionSymbol
+    ): IrExpression? {
+        // check for temp variables
+        if (argumentExpression.symbol.owner.origin != IrDeclarationOrigin.IR_TEMPORARY_VARIABLE) return null
+
+        val variable = argumentExpression.symbol.owner as? IrVariable
+        val variableInitializer = variable?.initializer
+
+        // we cannot cast Modifier to Modifier.Object. so just create new expression
+        when {
+            variableInitializer?.type?.isComposeModifierObject() == true -> {
+
+                val modifierObjectClass = modifierObjectClass ?: return null
+
+                val modifierObject = IrGetObjectValueImpl(
+                    startOffset = UNDEFINED_OFFSET,
+                    endOffset = UNDEFINED_OFFSET,
+                    type = modifierObjectClass.defaultType,
+                    symbol = modifierObjectClass
+                )
+                return modifyExpressionForTestTag(parameter, modifierObject, tag, applyTagFunction)
+            }
+
+            variableInitializer is IrBlock -> {
+                val lastStatement = variableInitializer.statements.lastOrNull() as? IrExpression
+                if (lastStatement != null) {
+                    val modifiedStatement =
+                        modifyExpressionForTestTag(parameter, lastStatement, tag, applyTagFunction)
+                    if (modifiedStatement != null) {
+                        variableInitializer.statements[variableInitializer.statements.lastIndex] =
+                            modifiedStatement
+                    }
+                }
+            }
+
+            variableInitializer != null -> {
+                val modifierInitializer =
+                    modifyExpressionForTestTag(parameter, variableInitializer, tag, applyTagFunction)
+                if (modifierInitializer != null) {
+                    variable.initializer = modifierInitializer
+                }
+            }
+        }
+        return null
+    }
+
+    private fun modifierIrObject(
+        argumentExpression: IrExpression,
+        parameter: IrValueParameter,
+        applyTagFunction: IrSimpleFunctionSymbol,
+        tag: String
+    ): IrCallImpl? {
+        if (argumentExpression.type.isComposeModifierObject().not()) return null
+
+        return IrCallImpl(
+            startOffset = UNDEFINED_OFFSET,
+            endOffset = UNDEFINED_OFFSET,
+            type = parameter.type,
+            symbol = applyTagFunction,
+            typeArgumentsCount = 0,
+            valueArgumentsCount = 1,
+        ).apply {
+            extensionReceiver = argumentExpression
+            putValueArgument(0, tag.toIrConst(pluginContext.irBuiltIns.stringType))
+        }
+    }
+
+    private fun modifyIrCall(
+        argumentExpression: IrCall,
+        parameter: IrValueParameter,
+        tag: String,
+        applyTagFunction: IrSimpleFunctionSymbol
+    ): IrExpression? {
+        val topmostReceiverCall = argumentExpression.getTopmostReceiverCall()
+        val topmostReceiverObject =
+            topmostReceiverCall.extensionReceiver ?: topmostReceiverCall.dispatchReceiver
+
+        if (topmostReceiverObject is IrGetValue) {
+            return modifyExpressionForTestTag(
+                parameter,
+                topmostReceiverObject,
+                tag,
+                applyTagFunction
+            )
+        }
+
+        val modifierObjectClass = modifierObjectClass
+        val thenFunction = thenFunction
+        if (topmostReceiverObject?.type?.isComposeModifierObject() != true || modifierObjectClass == null || thenFunction == null) return null
+
+        val modifierObject = IrGetObjectValueImpl(
+            startOffset = UNDEFINED_OFFSET,
+            endOffset = UNDEFINED_OFFSET,
+            type = modifierObjectClass.defaultType,
+            symbol = modifierObjectClass
+        )
+
+        val applyTagCall = IrCallImpl(
+            startOffset = UNDEFINED_OFFSET,
+            endOffset = UNDEFINED_OFFSET,
+            type = parameter.type,
+            symbol = applyTagFunction,
+            typeArgumentsCount = 0,
+            valueArgumentsCount = 1,
+        ).apply {
+            extensionReceiver = modifierObject
+            putValueArgument(0, tag.toIrConst(pluginContext.irBuiltIns.stringType))
+        }
+
+        val thenCall = IrCallImpl(
+            startOffset = UNDEFINED_OFFSET,
+            endOffset = UNDEFINED_OFFSET,
+            type = parameter.type,
+            symbol = thenFunction,
+            typeArgumentsCount = 0,
+            valueArgumentsCount = 1,
+        ).apply {
+            dispatchReceiver = applyTagCall
+            putValueArgument(0, argumentExpression)
+        }
+
+        return thenCall
+    }
 
     private fun IrCall.getTopmostReceiverCall(): IrCall =
         when (val receiver = extensionReceiver ?: dispatchReceiver) {
@@ -181,7 +290,7 @@ internal class TestTagApplier(
     }
 
     private fun IrExpression.containsModifierWithTestTag(): Boolean {
-        return this.dump(true).contains(testTagRegex)
+        return this.dumpKotlinLike().contains(testTagRegex)
     }
 
     private fun createTag(
@@ -203,16 +312,26 @@ internal class TestTagApplier(
         }
 
     private fun IrExpression.isValidValueExpression(): Boolean {
-        return this is IrCall || this is IrGetObjectValue
+        return this is IrCall || this is IrGetObjectValue || this is IrGetValue
     }
-
 
     private companion object {
         const val MODIFIER = "androidx.compose.ui.Modifier"
         const val MODIFIER_COMPANION = "${MODIFIER}.Companion"
         val Composable = FqName( "androidx.compose.runtime.Composable")
+        val modifierObjectClassId = ClassId(
+            FqName("androidx.compose.ui"),
+            Name.identifier("Modifier.Companion")
+        )
+        val thenFuncCallableId = CallableId(
+            ClassId(
+                FqName("androidx.compose.ui"),
+                Name.identifier("Modifier")
+            ),
+            Name.identifier("then")
+        )
         val testTagRegex = "applyTestTag|testTag".toRegex()
-        val applyTafCallableId =
-            CallableId(FqName("com.vk.compose.test.tag"), Name.identifier("applyTestTag"))
+        val applyTagCallableId =
+            CallableId(FqName("com.vk.compose.test.tag.applier"), Name.identifier("applyTestTag"))
     }
 }
