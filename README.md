@@ -1,11 +1,13 @@
 # vkcompose
 
-
 [![Maven Central](https://img.shields.io/maven-central/v/com.vk.vkompose/com.vk.vkompose.gradle.plugin)](https://central.sonatype.com/search?q=vkompose)
 
 The repository contains utilities for Jetpack Compose, including Kotlin compiler plugins, IDEA plugin, and a Detekt rule.
 
 ### Kotlin Compiler Plugins
+
+Compiler plugins support kotlin version from 1.8.10 to 1.9.21. Also you can try them for kotlin v2.0, but this version is not a stable release yet.
+
 Currently, the following compiler plugins are available:
 - Functions skippability checker: Determines [function skippability](https://github.com/androidx/androidx/blob/androidx-main/compose/compiler/design/compiler-metrics.md#functions-that-are-restartable-but-not-skippable) based on checking function parameters stability.
 - Recomposed function highlighter: Highlights recomposed functions with a colored border which increases the width when the recompositions count becomes larger. See [here](https://android-developers.googleblog.com/2022/03/play-time-with-jetpack-compose.html)
@@ -19,7 +21,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.2"
+    id("com.vk.vkompose") version "0.3"
 }
 ```
 
@@ -63,13 +65,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.2"
-    id("com.vk.recompose-logger") version "0.2"
-    id("com.vk.compose-test-tag-applier") version "0.2"
-    id("com.vk.compose-test-tag-cleaner") version "0.2"
-    id("com.vk.compose-test-tag-drawer") version "0.2"
-    id("com.vk.compose-source-information-cleaner") version "0.2"
-    id("com.vk.composable-skippability-checker") version "0.2"
+    id("com.vk.recompose-highlighter") version "0.3"
+    id("com.vk.recompose-logger") version "0.3"
+    id("com.vk.compose-test-tag-applier") version "0.3"
+    id("com.vk.compose-test-tag-cleaner") version "0.3"
+    id("com.vk.compose-test-tag-drawer") version "0.3"
+    id("com.vk.compose-source-information-cleaner") version "0.3"
+    id("com.vk.composable-skippability-checker") version "0.3"
 }
 
 recomposeHighlighter {
@@ -129,7 +131,7 @@ You can download and install it from the jar file for [Hedgehog](idea-plugin/vko
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
 ```kotlin
 dependencies {
-    detektPlugins("com.vk.vkompose:0.2")
+    detektPlugins("com.vk.vkompose:0.3")
 }
 ```
 
