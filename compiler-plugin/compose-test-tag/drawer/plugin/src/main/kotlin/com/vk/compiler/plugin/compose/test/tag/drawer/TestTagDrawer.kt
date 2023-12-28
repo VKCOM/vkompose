@@ -50,7 +50,7 @@ internal class TestTagDrawer(
                 argumentExpression,
                 drawTestTagFunction,
             )
-            modifiedArgumentExpression?.let { putValueArgument(index, it) }
+            putValueArgument(index, modifiedArgumentExpression)
         }
         return this
     }
@@ -59,7 +59,7 @@ internal class TestTagDrawer(
         parameter: IrValueParameter,
         argumentExpression: IrExpression,
         drawTestTagFunction: IrSimpleFunctionSymbol
-    ): IrExpression? {
+    ): IrExpression {
 
         // Column() -> Column(<default-value>.drawTestTag())
         // Column(Modifier) -> Column(Modifier.drawTestTag())
@@ -76,7 +76,7 @@ internal class TestTagDrawer(
 
         drawTestTagCall.extensionReceiver = argumentExpression
 
-        return null
+        return drawTestTagCall
     }
 
     private fun IrFunction.isComposable(): Boolean = hasAnnotation(Composable)
@@ -106,6 +106,6 @@ internal class TestTagDrawer(
         val Composable = FqName("androidx.compose.runtime.Composable")
 
         val drawTestTagCallableId =
-            CallableId(FqName("com.vk.compose.test.tag"), Name.identifier("drawTestTag"))
+            CallableId(FqName("com.vk.compose.test.tag.drawer"), Name.identifier("drawTestTag"))
     }
 }

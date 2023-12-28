@@ -142,7 +142,7 @@ private fun CombinedModifier.splitCombinedModifier(): Pair<Modifier?, Modifier?>
     return Pair(outerValue, innerValue)
 }
 
-// copy past from VkDropdown. i do not want to add dependency of material for this
+// copy past from Dropdown. i do not want to add dependency of material for this
 @Immutable
 private data class DropdownMenuPositionProvider(
     val contentOffset: DpOffset,

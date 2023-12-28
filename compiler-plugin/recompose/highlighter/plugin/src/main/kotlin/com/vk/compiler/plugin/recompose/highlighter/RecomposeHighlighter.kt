@@ -86,7 +86,7 @@ internal class RecomposeHighlighter(
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
             symbol = highlighterModifier
-        ) as IrExpression
+        )
 
         val thenCall = IrCallImpl(
             startOffset = UNDEFINED_OFFSET,
