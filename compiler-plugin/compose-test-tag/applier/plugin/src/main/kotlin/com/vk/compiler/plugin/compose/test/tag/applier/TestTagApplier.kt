@@ -143,8 +143,10 @@ internal class TestTagApplier(
         val variable = argumentExpression.symbol.owner as? IrVariable
         val variableInitializer = variable?.initializer
 
-        // we cannot cast Modifier to Modifier.Object. so just create new expression
-        when {
+        if (variableInitializer?.containsModifierWithTestTag() == true) return null
+
+        return when {
+            // we cannot cast Modifier to Modifier.Object. so just create new expression
             variableInitializer?.type?.isComposeModifierObject() == true -> {
 
                 val modifierObjectClass = modifierObjectClass ?: return null
@@ -155,7 +157,7 @@ internal class TestTagApplier(
                     type = modifierObjectClass.defaultType,
                     symbol = modifierObjectClass
                 )
-                return modifyExpressionForTestTag(parameter, modifierObject, tag, applyTagFunction)
+                modifyExpressionForTestTag(parameter, modifierObject, tag, applyTagFunction)
             }
 
             variableInitializer is IrBlock -> {
@@ -164,10 +166,11 @@ internal class TestTagApplier(
                     val modifiedStatement =
                         modifyExpressionForTestTag(parameter, lastStatement, tag, applyTagFunction)
                     if (modifiedStatement != null) {
-                        variableInitializer.statements[variableInitializer.statements.lastIndex] =
-                            modifiedStatement
+                        val lastIndex = variableInitializer.statements.lastIndex
+                        variableInitializer.statements[lastIndex] = modifiedStatement
                     }
                 }
+                null
             }
 
             variableInitializer != null -> {
@@ -176,9 +179,10 @@ internal class TestTagApplier(
                 if (modifierInitializer != null) {
                     variable.initializer = modifierInitializer
                 }
+                null
             }
+            else -> null
         }
-        return null
     }
 
     private fun modifierIrObject(
