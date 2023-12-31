@@ -11,7 +11,7 @@ Compiler plugins support kotlin version from 1.8.10 to 1.9.21. Also you can try 
 Currently, the following compiler plugins are available:
 - Functions skippability checker: Determines [function skippability](https://github.com/androidx/androidx/blob/androidx-main/compose/compiler/design/compiler-metrics.md#functions-that-are-restartable-but-not-skippable) based on checking function parameters stability.
 - Recomposed function highlighter: Highlights recomposed functions with a colored border which increases the width when the recompositions count becomes larger. See [here](https://android-developers.googleblog.com/2022/03/play-time-with-jetpack-compose.html)
-- Recomposed function reasons logger: Logs reasons for recomposed functions when arguments of that function has been changed
+- Recomposed function reasons logger: Logs reasons for recomposed functions when arguments of that function has been changed. It's like a [Rebugger](https://github.com/theapache64/rebugger), but automated. You don’t need to register the logger/rebugger in suspected problem areas every time
 - Test tag generator for Composable functions: Adds generated test tag for composable function if there is a default Modifier that does not have a applied testTag.
 - Test tag remover: Removes all test tags by replacing them with an empty string.
 - Test tag drawer: Draws test tags in a dialog for long tap. (It`s very experimental. I am looking for a better solution)
@@ -21,7 +21,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.3"
+    id("com.vk.vkompose") version "0.3.1"
 }
 ```
 
@@ -65,13 +65,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.3"
-    id("com.vk.recompose-logger") version "0.3"
-    id("com.vk.compose-test-tag-applier") version "0.3"
-    id("com.vk.compose-test-tag-cleaner") version "0.3"
-    id("com.vk.compose-test-tag-drawer") version "0.3"
-    id("com.vk.compose-source-information-cleaner") version "0.3"
-    id("com.vk.composable-skippability-checker") version "0.3"
+    id("com.vk.recompose-highlighter") version "0.3.1"
+    id("com.vk.recompose-logger") version "0.3.1"
+    id("com.vk.compose-test-tag-applier") version "0.3.1"
+    id("com.vk.compose-test-tag-cleaner") version "0.3.1"
+    id("com.vk.compose-test-tag-drawer") version "0.3.1"
+    id("com.vk.compose-source-information-cleaner") version "0.3.1"
+    id("com.vk.composable-skippability-checker") version "0.3.1"
 }
 
 recomposeHighlighter {
@@ -113,7 +113,7 @@ RecomposeLogger(
     arguments = mapOf("param1" to param1, "param2" to param2),
 )
 ```
-And check logs with tag "RecomposeLogger".
+And check logs with tag "RecomposeLogger". This already looks like the [Rebugger](https://github.com/theapache64/rebugger) is working.
 
 ### IDEA Plugin
 The IDEA plugin currently offers two features:
@@ -131,7 +131,7 @@ You can download and install it from the jar file for [Hedgehog](idea-plugin/vko
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
 ```kotlin
 dependencies {
-    detektPlugins("com.vk.vkompose:0.3")
+    detektPlugins("com.vk.vkompose:0.3.1")
 }
 ```
 
