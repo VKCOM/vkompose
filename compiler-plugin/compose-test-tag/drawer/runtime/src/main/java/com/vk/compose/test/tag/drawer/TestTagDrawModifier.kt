@@ -12,7 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.CombinedModifier
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
@@ -37,21 +36,20 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import kotlin.random.Random
 
-@OptIn(ExperimentalTextApi::class)
 @Stable
 fun Modifier.drawTestTag(): Modifier = composed(debugInspectorInfo {
     name = "testTagDrawer"
 }) {
     if (!TestTagDrawConfig.isEnabled) return@composed Modifier
 
-    val actual = this@drawTestTag.searchInspectableValue {
-        it.semanticsConfiguration.getOrNull(SemanticsProperties.TestTag).orEmpty().isNotEmpty()
-    }
+    val actual = this@drawTestTag.extractSemanticsModifier()
+
     val currentTag = actual?.semanticsConfiguration?.getOrNull(SemanticsProperties.TestTag)
         ?: return@composed Modifier
 
@@ -71,7 +69,8 @@ fun Modifier.drawTestTag(): Modifier = composed(debugInspectorInfo {
     val density = LocalDensity.current
     val borderWidth = 4.dp
     val borderWidthPx = with(density) { borderWidth.toPx() }
-    val positionProvider = remember(density) { DropdownMenuPositionProvider(DpOffset.Zero, density) }
+    val positionProvider =
+        remember(density) { DropdownMenuPositionProvider(DpOffset.Zero, density) }
 
     if (showTag) {
         Popup(
@@ -118,29 +117,14 @@ fun Modifier.drawTestTag(): Modifier = composed(debugInspectorInfo {
 }
 
 
-private fun Modifier.searchInspectableValue(predicate: (SemanticsModifier) -> Boolean): SemanticsModifier? {
-    return when (this) {
-        is SemanticsModifier -> this.takeIf(predicate)
-        is CombinedModifier -> {
-            val (outerValue, innerValue) = splitCombinedModifier()
-            val outerInspectableValue = outerValue?.searchInspectableValue(predicate)
-            val innerInspectableValue = innerValue?.searchInspectableValue(predicate)
-            innerInspectableValue ?: outerInspectableValue
-        }
-
-        else -> null
+@Stable
+private fun Modifier.extractSemanticsModifier(): SemanticsModifier? =
+    foldIn<SemanticsModifier?>(null) { acc, element ->
+        val semanticsModifier = element as? SemanticsModifier
+        val semanticsConfiguration = semanticsModifier?.semanticsConfiguration
+        val hasTestTag = semanticsConfiguration?.getOrNull(SemanticsProperties.TestTag).isNullOrEmpty().not()
+        semanticsModifier?.takeIf { hasTestTag } ?: acc
     }
-}
-
-private fun CombinedModifier.splitCombinedModifier(): Pair<Modifier?, Modifier?> {
-    val outer = CombinedModifier::class.java.getDeclaredField("outer")
-    val inner = CombinedModifier::class.java.getDeclaredField("inner")
-    outer.isAccessible = true
-    inner.isAccessible = true
-    val outerValue = outer.get(this) as? Modifier
-    val innerValue = inner.get(this) as? Modifier
-    return Pair(outerValue, innerValue)
-}
 
 // copy past from Dropdown. i do not want to add dependency of material for this
 @Immutable
