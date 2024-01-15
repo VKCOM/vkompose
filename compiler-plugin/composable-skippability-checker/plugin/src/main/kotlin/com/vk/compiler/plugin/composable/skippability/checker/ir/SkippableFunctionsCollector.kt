@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.ir.expressions.IrSetValue
 import org.jetbrains.kotlin.ir.expressions.IrValueAccessExpression
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.isUnit
-import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isLocal
 import org.jetbrains.kotlin.ir.util.kotlinFqName
@@ -86,7 +86,7 @@ internal class SkippableFunctionsCollector(
         val suppressAnnotation = function.annotations.any { annotation ->
             val argumentsRange = 0 until annotation.valueArgumentsCount
             annotation.symbol.owner.parentAsClass.name.asString().contains(SUPPRESS)
-                    && argumentsRange.any { annotation.getValueArgument(it)?.dump().orEmpty().contains(NON_SKIPPABLE_COMPOSABLE) }
+                    && argumentsRange.any { annotation.getValueArgument(it)?.dumpKotlinLike().orEmpty().contains(NON_SKIPPABLE_COMPOSABLE) }
         }
 
         when {
