@@ -1,9 +1,10 @@
 enum class Version(val ideaVersion: String, val versionName: String, val sinceBuild: String, val untilBuild: String? = null) {
     Hedgehog("2023.1.4", "Hedgehog", "223", "231.*"),
     Iguana("2023.2", "Iguana", "232"),
+    Jellyfish("2023.3", "Jellyfish", "232"),
 }
 
-val currentVersion = Version.Iguana
+val currentVersion = Version.Jellyfish
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.8.22"
@@ -11,7 +12,7 @@ plugins {
 }
 
 group = "com.vk.idea.plugin.vkompose"
-version = "0.1-${currentVersion.versionName}"
+version = "0.1.1-${currentVersion.versionName}"
 
 repositories {
     mavenCentral()
@@ -43,7 +44,10 @@ tasks {
     }
 
     runIde {
-        ideDir.set(file(project.properties["studio.path"]?.toString().orEmpty()))
+        val idePath = project.properties["studio.path"]?.toString().orEmpty()
+        if (idePath.isNotEmpty()) {
+            ideDir.set(file(idePath))
+        }
     }
 
     publishPlugin {
