@@ -131,7 +131,7 @@ You can download and install it from the jar file for [Hedgehog](idea-plugin/vko
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
 ```kotlin
 dependencies {
-    detektPlugins("com.vk.vkompose:0.3.2")
+    detektPlugins("com.vk.vkompose:detekt:0.3.2")
 }
 ```
 
