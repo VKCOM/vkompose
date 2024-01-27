@@ -36,6 +36,7 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
     private val stabilityInferencer = StabilityInferencer()
 
     private val settings = ComposeSettingStateComponent.getInstance()
+    private var ignoredClasses: List<Regex> = settings.stabilityChecksIgnoringClasses.split("\n").map { it.trim().toRegex() }
 
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         if (!settings.isFunctionSkippabilityCheckingEnabled) return
@@ -55,37 +56,43 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
 
         val extensionReceiverType = element.resolveToDescriptorIfAny()?.extensionReceiverParameter?.type
         var extensionReceiverStability: KtStability? = null
-        if (extensionReceiverType?.fqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(extensionReceiverType).knownUnstable()) {
+        val extensionFqName = extensionReceiverType?.fqName
+        if (!extensionFqName.shouldBeIgnored() && extensionFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(extensionReceiverType).knownUnstable()) {
             extensionReceiverStability = stabilityInferencer.ktStabilityOf(extensionReceiverType)
         }
 
         val parentClassType = element.findParentOfType<KtClass>()?.resolveToDescriptorIfAny()?.defaultType
         var dispatchReceiverStability: KtStability? = null
-        if (parentClassType?.fqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(parentClassType).knownUnstable()) {
+        val dispatchFqName = parentClassType?.fqName
+        if (!dispatchFqName.shouldBeIgnored() && dispatchFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(parentClassType).knownUnstable()) {
             dispatchReceiverStability = stabilityInferencer.ktStabilityOf(parentClassType)
         }
 
         for (receiver in element.contextReceivers) {
             val type = receiver.type ?: continue
+            val fqName = type.fqName
+
             val stability = stabilityInferencer.ktStabilityOf(type)
             val isUnstable = stability.knownUnstable()
-            val isFromCompose = type.fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
+            val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
+            val isIgnored = fqName.shouldBeIgnored()
 
-            if (!isFromCompose && isUnstable) {
+            if (!isIgnored && !isFromCompose && isUnstable) {
                 nonSkippableContextReceivers += receiver to stability
             }
         }
 
-
         for (valueParameter in element.valueParameters) {
             val returnType = valueParameter.descriptor?.type ?: continue
+            val fqName = returnType.fqName
 
             val isRequired = valueParameter.defaultValue == null
             val stability = stabilityInferencer.ktStabilityOf(returnType)
             val isUnstable = stability.knownUnstable()
-            val isFromCompose = valueParameter.descriptor?.type?.fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
+            val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
+            val isIgnored = fqName.shouldBeIgnored()
 
-            if (!isFromCompose && isUnstable && isRequired) {
+            if (!isIgnored && !isFromCompose && isUnstable && isRequired) {
                 nonSkippableParams += valueParameter to stability
             }
         }
@@ -181,6 +188,8 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
             }
         }
     }
+
+    private fun FqName?.shouldBeIgnored() = ignoredClasses.any { this?.asString()?.matches(it) == true }
 
     private fun KtNamedFunction.isRestartable(): Boolean = when {
         isLocal -> false

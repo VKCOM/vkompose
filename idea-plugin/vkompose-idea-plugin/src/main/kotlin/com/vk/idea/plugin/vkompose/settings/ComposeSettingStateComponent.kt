@@ -26,6 +26,12 @@ internal class ComposeSettingStateComponent :
         }
         get() = state.isFunctionSkippabilityCheckingEnabled
 
+    var stabilityChecksIgnoringClasses: String
+        set(value) {
+            state.stabilityChecksIgnoringClasses = value
+        }
+        get() = state.stabilityChecksIgnoringClasses.orEmpty()
+
 
     class State : BaseState() {
 
@@ -33,6 +39,7 @@ internal class ComposeSettingStateComponent :
 
         var isFunctionSkippabilityCheckingEnabled by property(true)
 
+        var stabilityChecksIgnoringClasses by string("")
     }
 
     companion object {
