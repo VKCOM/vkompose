@@ -13,6 +13,7 @@ internal object ComposeClassName {
 
 internal object ComposeClassString {
     const val NonRestartableComposable = "NonRestartableComposable"
+    const val NonSkippableComposable = "NonSkippableComposable"
     const val ExplicitGroupsComposable = "ExplicitGroupsComposable"
     const val Composable = "Composable"
 }

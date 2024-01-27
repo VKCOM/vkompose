@@ -6,6 +6,7 @@ import com.vk.rules.compose.utils.resolveDescriptor
 import com.vk.rules.compose.utils.resolveToDescriptorIfAny
 import com.vk.rules.compose.utils.resolveType
 import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtContextReceiver
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -23,7 +24,13 @@ class FunctionSkippabilityChecker {
         bindingContext: BindingContext,
         ignoredClasses: List<Regex>
     ) : SkippabilityResult {
-        if (!function.hasAnnotation(ComposeClassString.Composable) || !function.isRestartable(bindingContext)) return SkippabilityResult.None
+
+        if (!function.hasAnnotation(ComposeClassString.Composable)
+            || !function.isRestartable(bindingContext)
+            || function.hasAnnotation(ComposeClassString.NonSkippableComposable)
+        ) {
+            return SkippabilityResult.None
+        }
 
         val functionDescriptor = function.resolveToDescriptorIfAny(bindingContext)
         functionDescriptor?.module?.let(stabilityInferencer::setFunctionModule)
@@ -35,14 +42,14 @@ class FunctionSkippabilityChecker {
         val extensionReceiverType = functionDescriptor?.extensionReceiverParameter?.type
         var extensionReceiverStability: KtStability? = null
         val extensionFqName = extensionReceiverType?.fqName
-        if (!ignoredClasses.any { extensionFqName?.asString()?.matches(it) == true } && extensionFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(extensionReceiverType).knownUnstable()) {
+        if (!extensionFqName.shouldBeIgnored(ignoredClasses) && extensionFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(extensionReceiverType).knownUnstable()) {
             extensionReceiverStability = stabilityInferencer.ktStabilityOf(extensionReceiverType)
         }
 
         val parentClassType = function.findParentOfType<KtClass>()?.resolveToDescriptorIfAny(bindingContext)?.defaultType
         var dispatchReceiverStability: KtStability? = null
         val dispatchFqName = parentClassType?.fqName
-        if (!ignoredClasses.any { dispatchFqName?.asString()?.matches(it) == true } && dispatchFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(parentClassType).knownUnstable()) {
+        if (!dispatchFqName.shouldBeIgnored(ignoredClasses) && dispatchFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(parentClassType).knownUnstable()) {
             dispatchReceiverStability = stabilityInferencer.ktStabilityOf(parentClassType)
         }
 
@@ -52,7 +59,7 @@ class FunctionSkippabilityChecker {
             val isUnstable = stability.knownUnstable()
             val fqName = type.fqName
             val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
-            val isIgnored = ignoredClasses.any { fqName?.asString()?.matches(it) == true }
+            val isIgnored = fqName.shouldBeIgnored(ignoredClasses)
 
             if (!isIgnored && !isFromCompose && isUnstable) {
                 nonSkippableContextReceivers += receiver to stability
@@ -68,7 +75,7 @@ class FunctionSkippabilityChecker {
             val isUnstable = stability.knownUnstable()
             val fqName = valueParameter.resolveDescriptor(bindingContext)?.type?.fqName
             val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
-            val isIgnored = ignoredClasses.any { fqName?.asString()?.matches(it) == true }
+            val isIgnored = fqName.shouldBeIgnored(ignoredClasses)
 
             if (!isIgnored && !isFromCompose && isUnstable && isRequired) {
                 nonSkippableParams += valueParameter to stability
@@ -92,6 +99,8 @@ class FunctionSkippabilityChecker {
 
         return SkippabilityResult.None
     }
+
+    private fun FqName?.shouldBeIgnored(ignoredClasses: List<Regex>, ) = ignoredClasses.any { this?.asString()?.matches(it) == true }
 
     private fun KtNamedFunction.isRestartable(bindingContext: BindingContext): Boolean = when {
         isLocal -> false
