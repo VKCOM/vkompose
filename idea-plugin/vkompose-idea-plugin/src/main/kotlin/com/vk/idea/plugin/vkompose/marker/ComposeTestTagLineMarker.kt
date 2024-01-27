@@ -6,10 +6,10 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
 import com.vk.idea.plugin.vkompose.ComposeClassName.Composable
-import com.vk.idea.plugin.vkompose.hasComposableAnnotation
 import com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent
 import com.vk.idea.plugin.vkompose.Icons
 import com.vk.idea.plugin.vkompose.action.ComposeCopyTestTagAction
+import com.vk.idea.plugin.vkompose.hasAnnotation
 import org.jetbrains.kotlin.builtins.isFunctionType
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
@@ -41,7 +41,7 @@ class ComposeTestTagLineMarker : LineMarkerProvider {
         if (!settings.isTestTagHintShowed || element !is KtCallExpression) return null
 
         val declaration = element.searchDeclaredFunction()
-        if (declaration?.hasComposableAnnotation() == true
+        if (declaration?.hasAnnotation(Composable) == true
             && declaration.hasComposeModifier()
             && element.containsObjectModifierWithoutTag()
         ) {

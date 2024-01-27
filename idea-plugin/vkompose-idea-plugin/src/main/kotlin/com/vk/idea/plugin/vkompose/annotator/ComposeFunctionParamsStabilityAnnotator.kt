@@ -7,11 +7,13 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.findParentOfType
 import com.vk.idea.plugin.vkompose.COMPOSE_PACKAGE_NAME
-import com.vk.idea.plugin.vkompose.ComposeClassName
+import com.vk.idea.plugin.vkompose.ComposeClassName.Composable
+import com.vk.idea.plugin.vkompose.ComposeClassName.ExplicitGroupsComposable
+import com.vk.idea.plugin.vkompose.ComposeClassName.NonRestartableComposable
+import com.vk.idea.plugin.vkompose.ComposeClassName.NonSkippableComposable
 import com.vk.idea.plugin.vkompose.extensions.getQualifiedName
 import com.vk.idea.plugin.vkompose.extensions.type
 import com.vk.idea.plugin.vkompose.hasAnnotation
-import com.vk.idea.plugin.vkompose.hasComposableAnnotation
 import com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
 import org.jetbrains.kotlin.idea.caches.resolve.findModuleDescriptor
@@ -22,6 +24,7 @@ import org.jetbrains.kotlin.idea.inspections.suppress.KotlinSuppressIntentionAct
 import org.jetbrains.kotlin.idea.quickfix.RemoveArgumentFix
 import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
 import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtContextReceiver
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -37,7 +40,13 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         if (!settings.isFunctionSkippabilityCheckingEnabled) return
 
-        if (element !is KtNamedFunction || !element.hasComposableAnnotation() || !element.isRestartable()) return
+        if (element !is KtNamedFunction
+            || !element.hasAnnotation(Composable)
+            || !element.isRestartable()
+            || element.hasAnnotation(NonSkippableComposable)
+        ) {
+            return
+        }
 
         stabilityInferencer.setFunctionModule(element.findModuleDescriptor())
         val nonSkippableParams = mutableMapOf<KtParameter, KtStability>()
@@ -98,7 +107,6 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
             val isSuppress = annotation.getQualifiedName()?.contains(Keys.SUPPRESS) == true
             isSuppress && annotation.valueArgumentList?.arguments.orEmpty().any { it.getArgumentExpression()?.text?.contains(Keys.NON_SKIPPABLE_COMPOSABLE) == true }
         }
-
 
         val hasUnstableParams = nonSkippableParams.isNotEmpty()
                 || nonSkippableContextReceivers.isNotEmpty()
@@ -170,7 +178,6 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
                             .registerFix()
                             .create()
                     }
-
             }
         }
     }
@@ -178,8 +185,8 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
     private fun KtNamedFunction.isRestartable(): Boolean = when {
         isLocal -> false
         hasModifier(KtTokens.INLINE_KEYWORD) -> false
-        hasAnnotation(ComposeClassName.NonRestartableComposable.asString()) -> false
-        hasAnnotation(ComposeClassName.ExplicitGroupsComposable.asString()) -> false
+        hasAnnotation(NonRestartableComposable) -> false
+        hasAnnotation(ExplicitGroupsComposable) -> false
         resolveToDescriptorIfAny()?.returnType?.isUnit() == false -> false
         else -> true
     }

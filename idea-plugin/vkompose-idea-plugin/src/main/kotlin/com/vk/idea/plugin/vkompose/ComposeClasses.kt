@@ -13,6 +13,7 @@ private val ROOT_INTERNAL_FQ_NAME = FqName(ROOT_INTERNAL)
 internal object ComposeClassName {
     val Composable = FqName("$ROOT.Composable")
     val NonRestartableComposable = FqName("$ROOT.NonRestartableComposable")
+    val NonSkippableComposable = FqName("$ROOT.NonSkippableComposable")
     val ExplicitGroupsComposable = FqName("$ROOT.ExplicitGroupsComposable")
     val Composer = FqName("$ROOT.Composer")
     val StableMarker = FqName("$ROOT.StableMarker")
