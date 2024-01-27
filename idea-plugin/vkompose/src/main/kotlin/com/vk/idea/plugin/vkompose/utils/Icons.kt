@@ -1,4 +1,4 @@
-package com.vk.idea.plugin.vkompose
+package com.vk.idea.plugin.vkompose.utils
 
 import com.intellij.openapi.util.IconLoader
 import javax.swing.Icon

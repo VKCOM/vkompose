@@ -32,14 +32,19 @@ internal class ComposeSettingStateComponent :
         }
         get() = state.stabilityChecksIgnoringClasses.orEmpty()
 
+    var stabilityConfigurationPath: String
+        set(value) {
+            state.stabilityConfigurationPath = value
+        }
+        get() = state.stabilityConfigurationPath.orEmpty()
+
 
     class State : BaseState() {
 
         var isTestTagHintShowed by property(true)
-
         var isFunctionSkippabilityCheckingEnabled by property(true)
-
         var stabilityChecksIgnoringClasses by string("")
+        var stabilityConfigurationPath by string("")
     }
 
     companion object {

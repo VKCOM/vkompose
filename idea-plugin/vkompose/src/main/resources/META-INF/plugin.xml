@@ -18,9 +18,9 @@
                                  groupId="root"/>
 
         <codeInsight.lineMarkerProvider language="kotlin"
-                                        implementationClass="com.vk.idea.plugin.vkompose.marker.ComposeTestTagLineMarker"/>
+                                        implementationClass="com.vk.idea.plugin.vkompose.feature.testtag.ComposeTestTagLineMarker"/>
 
-        <annotator language="kotlin" implementationClass="com.vk.idea.plugin.vkompose.annotator.ComposeFunctionParamsStabilityAnnotator"/>
+        <annotator language="kotlin" implementationClass="com.vk.idea.plugin.vkompose.feature.stability.ComposeFunctionParamsStabilityAnnotator"/>
 
     </extensions>
 </idea-plugin>

@@ -1,4 +1,4 @@
-package com.vk.idea.plugin.vkompose
+package com.vk.idea.plugin.vkompose.feature.stability
 
 import kotlin.coroutines.EmptyCoroutineContext
 

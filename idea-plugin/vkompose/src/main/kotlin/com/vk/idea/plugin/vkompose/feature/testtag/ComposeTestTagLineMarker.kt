@@ -1,15 +1,14 @@
-package com.vk.idea.plugin.vkompose.marker
+package com.vk.idea.plugin.vkompose.feature.testtag
 
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
-import com.vk.idea.plugin.vkompose.ComposeClassName.Composable
+import com.vk.idea.plugin.vkompose.utils.ComposeClassName.Composable
 import com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent
-import com.vk.idea.plugin.vkompose.Icons
-import com.vk.idea.plugin.vkompose.action.ComposeCopyTestTagAction
-import com.vk.idea.plugin.vkompose.hasAnnotation
+import com.vk.idea.plugin.vkompose.utils.Icons
+import com.vk.idea.plugin.vkompose.utils.hasAnnotation
 import org.jetbrains.kotlin.builtins.isFunctionType
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName

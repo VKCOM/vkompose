@@ -1,10 +1,9 @@
-package com.vk.idea.plugin.vkompose.annotator
+package com.vk.idea.plugin.vkompose.feature.stability
 
-import com.vk.idea.plugin.vkompose.ComposeClassName
-import com.vk.idea.plugin.vkompose.KnownStableConstructs
+import com.vk.idea.plugin.vkompose.utils.ComposeClassName
 import com.vk.idea.plugin.vkompose.extensions.resolveDelegateType
-import com.vk.idea.plugin.vkompose.isValueClass
-import com.vk.idea.plugin.vkompose.isValueClassType
+import com.vk.idea.plugin.vkompose.utils.isValueClass
+import com.vk.idea.plugin.vkompose.utils.isValueClassType
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.builtins.isFunctionType
 import org.jetbrains.kotlin.builtins.isKFunctionType
@@ -21,6 +20,7 @@ import org.jetbrains.kotlin.descriptors.isInterface
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.resolve.descriptorUtil.classId
+import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameOrNull
 import org.jetbrains.kotlin.resolve.descriptorUtil.inlineClassRepresentation
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.resolve.isInlineClassType
@@ -214,7 +214,11 @@ private fun ClassDescriptor.isProtobufType(): Boolean {
 //        ?.getValueArgument(0) as? IrConst<*>
 //            )?.value as? Int
 
-class StabilityInferencer {
+class StabilityInferencer(
+    externalStableTypeMatchers: Set<FqNameMatcher>
+) {
+
+    private val externalTypeMatcherCollection = FqNameMatcherCollection(externalStableTypeMatchers)
 
     private var currentModule: ModuleDescriptor? = null
 
@@ -227,64 +231,83 @@ class StabilityInferencer {
 
     @Suppress("ReturnCount", "NestedBlockDepth") // expected
     private fun ktStabilityOf(
-        classSymbol: ClassDescriptor,
+        declaration: ClassDescriptor,
         substitutions: Map<TypeParameterDescriptor, KotlinType>,
         currentlyAnalyzing: Set<ClassDescriptor>
     ): KtStability {
-        if (currentlyAnalyzing.contains(classSymbol)) return KtStability.Unstable("recursive analyse ${classSymbol.name}")
-        if (classSymbol.hasStableMarkedDescendant()) return KtStability.Stable
-        if (classSymbol.kind.isEnumClass || classSymbol.kind == ClassKind.ENUM_ENTRY) return KtStability.Stable
-        if (classSymbol.defaultType.isPrimitiveType()) return KtStability.Stable
-        if (classSymbol.isProtobufType()) return KtStability.Stable
+        if (currentlyAnalyzing.contains(declaration)) return KtStability.Unstable("recursive analyse ${declaration.name}")
+        if (declaration.hasStableMarkedDescendant()) return KtStability.Stable
+        if (declaration.kind.isEnumClass || declaration.kind == ClassKind.ENUM_ENTRY) return KtStability.Stable
+        if (declaration.defaultType.isPrimitiveType()) return KtStability.Stable
+        if (declaration.isProtobufType()) return KtStability.Stable
 
 //    if (classSymbol == IrDeclarationOrigin.IR_BUILTINS_STUB) {
 //        error("Builtins Stub: ${declaration.name}")
 //    }
 
-        val analyzing = currentlyAnalyzing + classSymbol
+        val analyzing = currentlyAnalyzing + declaration
 
         val funModule = currentModule
-        if (canInferStability(classSymbol) || (funModule != null && funModule.name != classSymbol.module.name) ) {
-            val fqName = classSymbol.classId?.asFqNameString()
+        val isFromDifferentModule = funModule != null && funModule.name != declaration.module.name
+        if (canInferStability(declaration) || isFromDifferentModule || declaration.isExternalStableType()) {
+            val fqName = declaration.classId?.asFqNameString()
+            val typeParameters = declaration.declaredTypeParameters
             val stability: KtStability
             val mask: Int
             if (KnownStableConstructs.stableTypes.contains(fqName)) {
                 mask = KnownStableConstructs.stableTypes[fqName] ?: 0
                 stability = KtStability.Stable
+            } else if (declaration.isExternalStableType()) {
+                mask = externalTypeMatcherCollection
+                    .maskForName(declaration.fqNameOrNull()) ?: 0
+                stability = KtStability.Stable
             } else {
-                mask = retrieveParameterMask(classSymbol, substitutions, analyzing)
-                    ?: return KtStability.Unstable("type ${classSymbol.name} doesn't have @StabilityInferred")
-                stability = KtStability.Runtime(classSymbol)
-            }
-            return stability + KtStability.Combined(
-                classSymbol.declaredTypeParameters.mapIndexedNotNull { index, parameter ->
-                    if (mask and (0b1 shl index) != 0) {
-                        val type = substitutions[parameter]
-                        if (type != null)
-                            ktStabilityOf(type, substitutions, analyzing)
-                        else
-                            KtStability.Stable
-                    } else null
+                val bitmask = retrieveParameterMask(declaration, substitutions, analyzing)
+                    ?: return KtStability.Unstable("type ${declaration.name} doesn't have @StabilityInferred")
+
+                val knownStableMask =
+                    if (typeParameters.size < 32) 0b1 shl typeParameters.size else 0
+                val isKnownStable = bitmask and knownStableMask != 0
+                mask = bitmask and knownStableMask.inv()
+
+                stability = if (isKnownStable && !isFromDifferentModule) {
+                    KtStability.Stable
+                } else {
+                    KtStability.Runtime(declaration)
                 }
-            )
-        } else if (classSymbol.isJavaDescriptor) {
-            return KtStability.Unstable("type from Java: ${classSymbol.name}")
+            }
+            return when {
+                mask == 0 || typeParameters.isEmpty() -> stability
+                else -> stability + KtStability.Combined(
+                    typeParameters.mapIndexedNotNull { index, parameter ->
+                        if (mask and (0b1 shl index) != 0) {
+                            val type = substitutions[parameter]
+                            if (type != null)
+                                ktStabilityOf(type, substitutions, analyzing)
+                            else
+                                KtStability.Stable
+                        } else null
+                    }
+                )
+            }
+        } else if (declaration.isJavaDescriptor) {
+            return KtStability.Unstable("type from Java: ${declaration.name}")
         }
 
-        if (classSymbol.kind.isInterface) {
-            return KtStability.Unknown(classSymbol)
+        if (declaration.kind.isInterface) {
+            return KtStability.Unknown(declaration)
         }
 
         var stability = KtStability.Stable
 
-        for (member in classSymbol.unsubstitutedMemberScope.getDescriptorsFiltered()) {
+        for (member in declaration.unsubstitutedMemberScope.getDescriptorsFiltered()) {
             when (member) {
                 is PropertyDescriptor -> {
                     if (!member.kind.isReal) continue  // skip properties from parent
                     if (member.getter?.isDefault == false && !member.isVar && !member.isDelegated) continue // skip properties with non default getter because they are usually like function
 
                     member.backingField?.let {
-                        if (member.isVar && !member.isDelegated) return KtStability.Unstable("type ${classSymbol.name} contains non-delegated var ${member.name}")
+                        if (member.isVar && !member.isDelegated) return KtStability.Unstable("type ${declaration.name} contains non-delegated var ${member.name}")
                         stability += ktStabilityOf(
                             member.resolveDelegateType() ?: member.type,
                             substitutions,
@@ -306,12 +329,14 @@ class StabilityInferencer {
         return stability
     }
 
+    private fun ClassDescriptor.isExternalStableType(): Boolean {
+        return externalTypeMatcherCollection.matches(fqNameOrNull(), defaultType.supertypes().toList())
+    }
 
     private fun canInferStability(declaration: ClassDescriptor): Boolean {
         val fqName = declaration.classId?.asFqNameString()
         return KnownStableConstructs.stableTypes.contains(fqName) || KotlinBuiltIns.isBuiltIn(declaration)
     }
-
 
     private fun ktStabilityOf(
         kotlinType: KotlinType,

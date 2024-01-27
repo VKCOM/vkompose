@@ -1,4 +1,4 @@
-package com.vk.idea.plugin.vkompose.annotator
+package com.vk.idea.plugin.vkompose.feature.stability
 
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.lang.annotation.AnnotationHolder
@@ -6,15 +6,16 @@ import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.findParentOfType
-import com.vk.idea.plugin.vkompose.COMPOSE_PACKAGE_NAME
-import com.vk.idea.plugin.vkompose.ComposeClassName.Composable
-import com.vk.idea.plugin.vkompose.ComposeClassName.ExplicitGroupsComposable
-import com.vk.idea.plugin.vkompose.ComposeClassName.NonRestartableComposable
-import com.vk.idea.plugin.vkompose.ComposeClassName.NonSkippableComposable
+import com.vk.idea.plugin.vkompose.utils.COMPOSE_PACKAGE_NAME
+import com.vk.idea.plugin.vkompose.utils.ComposeClassName.Composable
+import com.vk.idea.plugin.vkompose.utils.ComposeClassName.ExplicitGroupsComposable
+import com.vk.idea.plugin.vkompose.utils.ComposeClassName.NonRestartableComposable
+import com.vk.idea.plugin.vkompose.utils.ComposeClassName.NonSkippableComposable
 import com.vk.idea.plugin.vkompose.extensions.getQualifiedName
 import com.vk.idea.plugin.vkompose.extensions.type
-import com.vk.idea.plugin.vkompose.hasAnnotation
+import com.vk.idea.plugin.vkompose.utils.hasAnnotation
 import com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
 import org.jetbrains.kotlin.idea.caches.resolve.findModuleDescriptor
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
@@ -33,10 +34,16 @@ import org.jetbrains.kotlin.types.typeUtil.isUnit
 
 class ComposeFunctionParamsStabilityAnnotator : Annotator {
 
-    private val stabilityInferencer = StabilityInferencer()
-
     private val settings = ComposeSettingStateComponent.getInstance()
     private var ignoredClasses: List<Regex> = settings.stabilityChecksIgnoringClasses.split("\n").map { it.trim().toRegex() }
+
+    private val stableTypeMatchers = try {
+        StabilityConfigParser.fromFile(settings.stabilityConfigurationPath).stableTypeMatchers
+    } catch (e: Exception) {
+        emptySet()
+    }
+
+    private val stabilityInferencer = StabilityInferencer(stableTypeMatchers)
 
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         if (!settings.isFunctionSkippabilityCheckingEnabled) return
@@ -111,8 +118,8 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
     ) {
 
         val suppressAnnotation = function.annotationEntries.firstOrNull { annotation ->
-            val isSuppress = annotation.getQualifiedName()?.contains(Keys.SUPPRESS) == true
-            isSuppress && annotation.valueArgumentList?.arguments.orEmpty().any { it.getArgumentExpression()?.text?.contains(Keys.NON_SKIPPABLE_COMPOSABLE) == true }
+            val isSuppress = annotation.getQualifiedName()?.contains(SUPPRESS) == true
+            isSuppress && annotation.valueArgumentList?.arguments.orEmpty().any { it.getArgumentExpression()?.text?.contains(NON_SKIPPABLE_COMPOSABLE) == true }
         }
 
         val hasUnstableParams = nonSkippableParams.isNotEmpty()
@@ -126,7 +133,7 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
         when {
             isUnstable -> {
                 val kind = AnnotationHostKind("fun", function.name.orEmpty(), newLineNeeded = true)
-                val intentionAction = KotlinSuppressIntentionAction(function, Keys.NON_SKIPPABLE_COMPOSABLE, kind)
+                val intentionAction = KotlinSuppressIntentionAction(function, NON_SKIPPABLE_COMPOSABLE, kind)
 
                 holder.newAnnotation(HighlightSeverity.ERROR, "Non skippable function")
                     .range(function.nameIdentifier?.originalElement ?: function.originalElement)
@@ -173,11 +180,11 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
                     return
                 }
                 suppressAnnotation?.valueArgumentList?.arguments.orEmpty()
-                    .filter { it.getArgumentExpression()?.text?.contains(Keys.NON_SKIPPABLE_COMPOSABLE) == true }
+                    .filter { it.getArgumentExpression()?.text?.contains(NON_SKIPPABLE_COMPOSABLE) == true }
                     .forEach { annotationValue ->
                         holder.newAnnotation(
                             HighlightSeverity.WARNING,
-                            "Remove unused ${Keys.NON_SKIPPABLE_COMPOSABLE}"
+                            "Remove unused ${NON_SKIPPABLE_COMPOSABLE}"
                         )
                             .highlightType(ProblemHighlightType.LIKE_UNUSED_SYMBOL)
                             .range(annotationValue.getArgumentExpression()!!.originalElement)
@@ -200,4 +207,8 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
         else -> true
     }
 
+    companion object {
+        const val SUPPRESS = "Suppress"
+        const val NON_SKIPPABLE_COMPOSABLE = "NonSkippableComposable"
+    }
 }

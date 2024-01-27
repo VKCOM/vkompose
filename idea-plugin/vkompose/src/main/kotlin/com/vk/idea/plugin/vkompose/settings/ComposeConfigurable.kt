@@ -1,5 +1,6 @@
 package com.vk.idea.plugin.vkompose.settings
 
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundSearchableConfigurable
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.components.JBCheckBox
@@ -32,12 +33,23 @@ internal class ComposeConfigurable : BoundSearchableConfigurable("VKompose", "pr
             }
 
             row {
-                label("Ignored classes:")
+                label("Stability configuration path:")
+            }.visibleIf(skippabilityChecks.selected)
+
+            row {
+                textFieldWithBrowseButton(
+                    fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor(),
+                    fileChosen = { newFile -> newFile.path }
+                ).align(AlignX.FILL).bindText(settings::stabilityConfigurationPath)
+            }.visibleIf(skippabilityChecks.selected)
+
+            row {
+                label("Additional ignored classes:")
             }.visibleIf(skippabilityChecks.selected)
 
             row {
                 textArea()
-                    .rows(10)
+                    .rows(5)
                     .align(AlignX.FILL)
                     .bindText(settings::stabilityChecksIgnoringClasses)
             }.visibleIf(skippabilityChecks.selected)

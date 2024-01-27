@@ -1,4 +1,4 @@
-package com.vk.idea.plugin.vkompose.action
+package com.vk.idea.plugin.vkompose.feature.testtag
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent

@@ -1,4 +1,4 @@
-package com.vk.idea.plugin.vkompose
+package com.vk.idea.plugin.vkompose.utils
 
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name

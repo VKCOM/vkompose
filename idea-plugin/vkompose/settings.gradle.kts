@@ -5,4 +5,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "vkompose-idea-plugin"
+rootProject.name = "vkompose"
