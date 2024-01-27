@@ -6,12 +6,13 @@ import com.vk.compiler.plugin.composable.skippability.checker.Keys.NON_SKIPPABLE
 object Messages {
     val SKIPPABILITY_FIX_EXPLANATION = """
                         These functions are not skippable because in them unstable parameters are used.
-                        Please fix or add @$SUPPRESS("$NON_SKIPPABLE_COMPOSABLE")
+                        Please fix or add annotation @$SUPPRESS("$NON_SKIPPABLE_COMPOSABLE") or @NonSkippableComposable (Compose Runtime 1.6.0)
                         How to fix:
                         1. Check parameters in list below. Maybe you fogot about @Stable or @Immutable annotation?
                         2. If you cannot make your parameter stable, try to declare default value (only if it is semantically required)
                         3. If your function is little(just using as proxy) and is not root function, try to add @NonRestartableComposable annotation (like LaunchedEffect, Image and etc).
                         4. If your function is root function and it doesn't read state, try to add @NonRestartableComposable annotation (like Surface and etc).
+                        5. Enable strong skipping mode (Compose Compiler 1.6.0) https://android.googlesource.com/platform/frameworks/support/+/androidx-main/compose/compiler/design/strong-skipping.md
                            
                         P.S. For 3 and 4 - When you store <this> reference to class instance and use it to access some parameters, your function cannot be skippable.
                              If you cannot fix add "@$SUPPRESS("$NON_SKIPPABLE_COMPOSABLE")" to save restartable opportunity.

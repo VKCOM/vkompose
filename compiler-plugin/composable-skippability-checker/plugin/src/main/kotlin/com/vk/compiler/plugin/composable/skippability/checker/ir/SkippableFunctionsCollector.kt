@@ -5,6 +5,7 @@ import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.C
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.Composer
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.ExplicitGroupsComposable
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.NonRestartableComposable
+import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.NonSkippableComposable
 import com.vk.compiler.plugin.composable.skippability.checker.Keys.NON_SKIPPABLE_COMPOSABLE
 import com.vk.compiler.plugin.composable.skippability.checker.Keys.SUPPRESS
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
@@ -65,7 +66,7 @@ internal class SkippableFunctionsCollector(
         val functionInfo = currentFunction
         currentFunction = currentFunction?.parent
 
-        if (functionInfo == null || !functionInfo.hasComposer || !functionInfo.function.isRestartable()) return
+        if (functionInfo == null || functionInfo.mayBeSkippable().not()) return
 
         val function = functionInfo.function
         val nonSkippableParams = mutableSetOf<String>()
@@ -95,6 +96,8 @@ internal class SkippableFunctionsCollector(
         }
 
     }
+
+    private fun FunctionInfo.mayBeSkippable() = hasComposer && function.isRestartable() && !function.hasNonSkippableComposableAnnotation
 
     private inline fun iterateOverParamsInFunctionChain(
         expression: IrValueAccessExpression,
@@ -130,6 +133,9 @@ internal class SkippableFunctionsCollector(
 
     private val IrFunction.hasNonRestartableAnnotation: Boolean
         get() = hasAnnotation(NonRestartableComposable)
+
+    private val IrFunction.hasNonSkippableComposableAnnotation: Boolean
+        get() = hasAnnotation(NonSkippableComposable)
 
     private val IrFunction.hasExplicitGroupsAnnotation: Boolean
         get() = hasAnnotation(ExplicitGroupsComposable)

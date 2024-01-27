@@ -39,9 +39,7 @@ class SkippabilityCommandLineProcessor : CommandLineProcessor {
     }
 
     companion object {
-        val STABILITY_CONFIG_PATH_KEY =
-            CompilerConfigurationKey<String>("Path to stability configuration file")
-        val ENABLED =
-            CompilerConfigurationKey<Boolean>("Enable checking stability of functions parameters that doesn`t allow them to be skippable")
+        val STABILITY_CONFIG_PATH_KEY = CompilerConfigurationKey<String>("Path to stability configuration file")
+        val ENABLED = CompilerConfigurationKey<Boolean>("Enable checking stability of functions parameters that doesn`t allow them to be skippable")
     }
 }
