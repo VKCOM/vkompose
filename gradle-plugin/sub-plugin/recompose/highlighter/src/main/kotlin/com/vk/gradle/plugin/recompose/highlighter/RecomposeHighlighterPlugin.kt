@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 class RecomposeHighlighterPlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun apply(target: Project) {
-        target.extensions.create("recomposeHighlighter", RecomposeHighlighterExtension::class.java)
+        target.extensions.create(EXTENSION_NAME, RecomposeHighlighterExtension::class.java)
         target.applyRuntimeDependency()
     }
 
@@ -21,20 +21,8 @@ class RecomposeHighlighterPlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
 
-        val extension =
-            project.extensions.findByType(RecomposeHighlighterExtension::class.java)
-                ?: project.extensions.create(
-                    "recomposeHighlighter",
-                    RecomposeHighlighterExtension::class.java
-                )
-
         return project.provider {
-            listOf(
-                SubpluginOption(
-                    "enabled",
-                    extension.isEnabled.toString()
-                )
-            )
+            listOf(SubpluginOption("enabled", project.isPluginEnabled().toString()))
         }
     }
 
@@ -46,10 +34,22 @@ class RecomposeHighlighterPlugin : KotlinCompilerPluginSupportPlugin {
         version = BuildConfig.VERSION
     )
 
-    private fun Project.applyRuntimeDependency() {
-        dependencies {
-            add("implementation", "com.vk.recompose-highlighter:compiler-runtime:${BuildConfig.VERSION}")
+    private fun Project.applyRuntimeDependency() = afterEvaluate {
+        if (isPluginEnabled()) {
+            dependencies {
+                add("implementation", "com.vk.recompose-highlighter:compiler-runtime:${BuildConfig.VERSION}")
+            }
         }
+    }
+
+    private fun Project.isPluginEnabled(): Boolean {
+        val extension = project.extensions.findByType(RecomposeHighlighterExtension::class.java)
+            ?: project.extensions.create(EXTENSION_NAME, RecomposeHighlighterExtension::class.java)
+        return extension.isEnabled
+    }
+
+    companion object {
+        private const val EXTENSION_NAME = "recomposeHighlighter"
     }
 
 }

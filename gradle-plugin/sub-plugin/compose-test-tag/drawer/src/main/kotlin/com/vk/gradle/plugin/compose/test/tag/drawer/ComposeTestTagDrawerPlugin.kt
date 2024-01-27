@@ -12,8 +12,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 class ComposeTestTagDrawerPlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun apply(target: Project) {
-        target.extensions.create("composeTestTagDrawer", ComposeTestTagDrawerExtension::class.java)
-
+        target.extensions.create(EXTENSION_NAME, ComposeTestTagDrawerExtension::class.java)
         target.applyRuntimeDependency()
     }
 
@@ -22,20 +21,8 @@ class ComposeTestTagDrawerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
 
-        val extension =
-            project.extensions.findByType(ComposeTestTagDrawerExtension::class.java)
-                ?: project.extensions.create(
-                    "composeTestTagDrawer",
-                    ComposeTestTagDrawerExtension::class.java
-                )
-
         return project.provider {
-            listOf(
-                SubpluginOption(
-                    "enabled",
-                    extension.isEnabled.toString()
-                ),
-            )
+            listOf(SubpluginOption("enabled", project.isPluginEnabled().toString()))
         }
     }
 
@@ -48,10 +35,25 @@ class ComposeTestTagDrawerPlugin : KotlinCompilerPluginSupportPlugin {
     )
 
 
-    private fun Project.applyRuntimeDependency() {
-        dependencies {
-            add("implementation", "com.vk.compose-test-tag-drawer:compiler-runtime:${BuildConfig.VERSION}")
+    private fun Project.applyRuntimeDependency() = afterEvaluate {
+        if (isPluginEnabled()) {
+            dependencies {
+                add(
+                    "implementation",
+                    "com.vk.compose-test-tag-drawer:compiler-runtime:${BuildConfig.VERSION}"
+                )
+            }
         }
+    }
+
+    private fun Project.isPluginEnabled(): Boolean {
+        val extension = project.extensions.findByType(ComposeTestTagDrawerExtension::class.java)
+            ?: project.extensions.create(EXTENSION_NAME, ComposeTestTagDrawerExtension::class.java)
+        return extension.isEnabled
+    }
+
+    companion object {
+        private const val EXTENSION_NAME = "composeTestTagDrawer"
     }
 
 }

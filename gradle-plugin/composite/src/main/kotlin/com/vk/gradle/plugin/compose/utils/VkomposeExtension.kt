@@ -1,13 +1,10 @@
 package com.vk.gradle.plugin.compose.utils
 
-import com.github.javaparser.printer.lexicalpreservation.LexicalPreservingPrinter.setup
 import com.vk.gradle.plugin.compose.utils.settings.RecomposeSetting
-import com.vk.gradle.plugin.compose.utils.settings.Setting
 import com.vk.gradle.plugin.compose.utils.settings.SkippabilityChecksSetting
 import com.vk.gradle.plugin.compose.utils.settings.SourceInfoCleanSetting
 import com.vk.gradle.plugin.compose.utils.settings.TestTagSetting
 import org.gradle.api.Project
-import kotlin.reflect.KClass
 
 abstract class VkomposeExtension {
     internal val settings = mutableMapOf(

@@ -12,8 +12,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 class ComposeTestTagApplierPlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun apply(target: Project) {
-        target.extensions.create("composeTestTagApplier", ComposeTestTagApplierExtension::class.java)
-
+        target.extensions.create(EXTENSION_NAME, ComposeTestTagApplierExtension::class.java)
         target.applyRuntimeDependency()
     }
 
@@ -22,20 +21,8 @@ class ComposeTestTagApplierPlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
 
-        val extension =
-            project.extensions.findByType(ComposeTestTagApplierExtension::class.java)
-                ?: project.extensions.create(
-                    "composeTestTagApplier",
-                    ComposeTestTagApplierExtension::class.java
-                )
-
         return project.provider {
-            listOf(
-                SubpluginOption(
-                    "enabled",
-                    extension.isEnabled.toString()
-                ),
-            )
+            listOf(SubpluginOption("enabled", project.isPluginEnabled().toString()))
         }
     }
 
@@ -48,10 +35,26 @@ class ComposeTestTagApplierPlugin : KotlinCompilerPluginSupportPlugin {
     )
 
 
-    private fun Project.applyRuntimeDependency() {
-        dependencies {
-            add("implementation", "com.vk.compose-test-tag-applier:compiler-runtime:${BuildConfig.VERSION}")
+    private fun Project.applyRuntimeDependency() = afterEvaluate {
+        if (isPluginEnabled()) {
+            dependencies {
+                add(
+                    "implementation",
+                    "com.vk.compose-test-tag-applier:compiler-runtime:${BuildConfig.VERSION}"
+                )
+            }
         }
+
+    }
+
+    private fun Project.isPluginEnabled(): Boolean {
+        val extension = project.extensions.findByType(ComposeTestTagApplierExtension::class.java)
+            ?: project.extensions.create(EXTENSION_NAME, ComposeTestTagApplierExtension::class.java)
+        return extension.isEnabled
+    }
+
+    companion object {
+        private const val EXTENSION_NAME = "composeTestTagApplier"
     }
 
 }

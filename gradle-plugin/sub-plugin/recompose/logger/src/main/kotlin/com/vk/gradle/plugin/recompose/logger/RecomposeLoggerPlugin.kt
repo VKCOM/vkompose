@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 class RecomposeLoggerPlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun apply(target: Project) {
-        target.extensions.create("recomposeLogger", RecomposeLoggerExtension::class.java)
+        target.extensions.create(EXTENSION_NAME, RecomposeLoggerExtension::class.java)
         target.applyRuntimeDependency()
     }
 
@@ -21,20 +21,8 @@ class RecomposeLoggerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
 
-        val extension =
-            project.extensions.findByType(RecomposeLoggerExtension::class.java)
-                ?: project.extensions.create(
-                    "recomposeLogger",
-                    RecomposeLoggerExtension::class.java
-                )
-
         return project.provider {
-            listOf(
-                SubpluginOption(
-                    "enabled",
-                    extension.isEnabled.toString()
-                )
-            )
+            listOf(SubpluginOption("enabled", project.isPluginEnabled().toString()))
         }
     }
 
@@ -46,10 +34,22 @@ class RecomposeLoggerPlugin : KotlinCompilerPluginSupportPlugin {
         version = BuildConfig.VERSION
     )
 
-    private fun Project.applyRuntimeDependency() {
-        dependencies {
-            add("implementation", "com.vk.recompose-logger:compiler-runtime:${BuildConfig.VERSION}")
+    private fun Project.applyRuntimeDependency() = afterEvaluate {
+        if (isPluginEnabled()) {
+            dependencies {
+                add("implementation", "com.vk.recompose-logger:compiler-runtime:${BuildConfig.VERSION}")
+            }
         }
+    }
+
+    private fun Project.isPluginEnabled(): Boolean {
+        val extension = project.extensions.findByType(RecomposeLoggerExtension::class.java)
+            ?: project.extensions.create(EXTENSION_NAME, RecomposeLoggerExtension::class.java)
+        return extension.isEnabled
+    }
+
+    companion object {
+        private const val EXTENSION_NAME = "recomposeLogger"
     }
 
 }
