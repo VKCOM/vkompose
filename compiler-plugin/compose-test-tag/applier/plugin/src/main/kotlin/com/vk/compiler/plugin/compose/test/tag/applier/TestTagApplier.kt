@@ -36,9 +36,7 @@ internal class TestTagApplier(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoid() {
 
-    private val applyTagFunction by lazy {
-        pluginContext.referenceFunctions(applyTagCallableId).firstOrNull()?.owner?.symbol
-    }
+    private val transformedCalls = mutableSetOf<IrCall>()
 
     private val modifierObjectClass by lazy {
         pluginContext.referenceClass(modifierObjectClassId)
@@ -46,6 +44,10 @@ internal class TestTagApplier(
 
     private val thenFunction by lazy {
         pluginContext.referenceFunctions(thenFuncCallableId).firstOrNull()?.owner?.symbol
+    }
+
+    private val applyTagFunction by lazy {
+        pluginContext.referenceFunctions(applyTagCallableId).firstOrNull()?.owner?.symbol
     }
 
     private val functionsStack = mutableListOf<IrFunction>()
@@ -65,15 +67,23 @@ internal class TestTagApplier(
         return result
     }
 
-    override fun visitCall(expression: IrCall): IrExpression {
+    override fun visitCall(expression: IrCall): IrExpression =
+        super.visitCall(expression.applyTestTagToModifier())
+
+
+    private fun IrCall.applyTestTagToModifier(): IrCall {
         val applyTagFunction = applyTagFunction
         val lastFile = filesStack.lastOrNull()
         val lastFunction = functionsStack.lastOrNull()?.searchNotAnonymous()
 
-        if (applyTagFunction != null && lastFile != null && lastFunction != null && expression.symbol.owner.isComposable()) {
-            expression.transformModifierArguments(applyTagFunction, lastFile, lastFunction)
-        }
-        return super.visitCall(expression)
+        if (applyTagFunction == null || lastFile == null || lastFunction == null) return this
+
+        if (!symbol.owner.isComposable() || this in transformedCalls) return this
+
+        transformedCalls += this
+
+        return transformModifierArguments(applyTagFunction, lastFile, lastFunction)
+
     }
 
     private fun IrCall.transformModifierArguments(
@@ -82,30 +92,32 @@ internal class TestTagApplier(
         lastFunction: IrFunction
     ): IrCall {
 
-        for(index in 0 until valueArgumentsCount) {
+        repeat(valueArgumentsCount) { index ->
             val parameter = symbol.owner.valueParameters[index]
             val argumentExpression = retrieveArgumentExpression(parameter, getValueArgument(index))
 
-            if (argumentExpression == null || argumentExpression.containsModifierWithTestTag() || parameter.isVararg || !parameter.isMainComposeModifier()) {
-                continue
-            }
+            if (argumentExpression?.containsModifierWithTestTag() == false && !parameter.isVararg && parameter.isMainComposeModifier()) {
 
-            val modifiedArgumentExpression = modifyExpressionForTestTag(
-                parameter,
-                argumentExpression,
-                createTag(this, lastFile, lastFunction),
-                applyTagFunction
-            )
-            modifiedArgumentExpression?.let { putValueArgument(index, it) }
+                val modifiedArgumentExpression = modifyExpressionForTestTag(
+                    argumentExpression,
+                    parameter,
+                    applyTagFunction,
+                    createTag(this, lastFile, lastFunction)
+                )
+                if (modifiedArgumentExpression != null) putValueArgument(
+                    index,
+                    modifiedArgumentExpression
+                )
+            }
         }
         return this
     }
 
     private fun modifyExpressionForTestTag(
-        parameter: IrValueParameter,
         argumentExpression: IrExpression,
-        tag: String,
-        applyTagFunction: IrSimpleFunctionSymbol
+        parameter: IrValueParameter,
+        applyTagFunction: IrSimpleFunctionSymbol,
+        tag: String
     ): IrExpression? {
 
         // Column() -> Column(<default-value>.applyTestTag(tag))
@@ -119,13 +131,19 @@ internal class TestTagApplier(
         // val tmp_modifier: Modifier.Object = Modifier.Object
         // Column(temp_modifier) -> Column(Modifier.applyTestTag(tag))
 
+        // val tmp_modifier: Modifier = {
+        //      val tmp: Modifier.Object = Modifier.Object
+        //      tmp.fillMaxSize() -> Modifier.applyTestTag(tag).then(tmp.fillMaxSize())
+        // }
+        // Column(tmp_modifier) -> Column(tmp_modifier)
+
         // val tmp_modifier: Modifier = Modifier.applyTestTag(tag).fillMaxSize()
         // Column(temp_modifier) -> Column(tmp_modifier)
 
         return when (argumentExpression) {
             is IrGetValue -> modifyIrGetValue(argumentExpression, parameter, tag, applyTagFunction)
             is IrCall -> modifyIrCall(argumentExpression, parameter, tag, applyTagFunction)
-            is IrGetObjectValue -> modifierIrObject(argumentExpression, parameter, applyTagFunction, tag)
+            is IrGetObjectValue -> modifierIrGetObject(argumentExpression, parameter, applyTagFunction, tag)
             else -> null
         }
 
@@ -157,17 +175,16 @@ internal class TestTagApplier(
                     type = modifierObjectClass.defaultType,
                     symbol = modifierObjectClass
                 )
-                modifyExpressionForTestTag(parameter, modifierObject, tag, applyTagFunction)
+                modifierIrGetObject(modifierObject, parameter, applyTagFunction, tag)
             }
 
             variableInitializer is IrBlock -> {
                 val lastStatement = variableInitializer.statements.lastOrNull() as? IrExpression
                 if (lastStatement != null) {
                     val modifiedStatement =
-                        modifyExpressionForTestTag(parameter, lastStatement, tag, applyTagFunction)
+                        modifyExpressionForTestTag(lastStatement, parameter, applyTagFunction, tag)
                     if (modifiedStatement != null) {
-                        val lastIndex = variableInitializer.statements.lastIndex
-                        variableInitializer.statements[lastIndex] = modifiedStatement
+                        variableInitializer.statements[variableInitializer.statements.lastIndex] = modifiedStatement
                     }
                 }
                 null
@@ -175,7 +192,7 @@ internal class TestTagApplier(
 
             variableInitializer != null -> {
                 val modifierInitializer =
-                    modifyExpressionForTestTag(parameter, variableInitializer, tag, applyTagFunction)
+                    modifyExpressionForTestTag(variableInitializer, parameter, applyTagFunction, tag)
                 if (modifierInitializer != null) {
                     variable.initializer = modifierInitializer
                 }
@@ -185,7 +202,7 @@ internal class TestTagApplier(
         }
     }
 
-    private fun modifierIrObject(
+    private fun modifierIrGetObject(
         argumentExpression: IrExpression,
         parameter: IrValueParameter,
         applyTagFunction: IrSimpleFunctionSymbol,
@@ -212,22 +229,37 @@ internal class TestTagApplier(
         tag: String,
         applyTagFunction: IrSimpleFunctionSymbol
     ): IrExpression? {
+
         val topmostReceiverCall = argumentExpression.getTopmostReceiverCall()
-        val topmostReceiverObject =
-            topmostReceiverCall.extensionReceiver ?: topmostReceiverCall.dispatchReceiver
+        val topmostReceiverObject = topmostReceiverCall.extensionReceiver ?: topmostReceiverCall.dispatchReceiver
 
         if (topmostReceiverObject is IrGetValue) {
-            return modifyExpressionForTestTag(
+            return modifyExpressionChainForIrGetValue(
+                argumentExpression,
                 parameter,
-                topmostReceiverObject,
+                applyTagFunction,
                 tag,
-                applyTagFunction
+                topmostReceiverObject
             )
         }
 
-        val modifierObjectClass = modifierObjectClass
+        return modifyExpressionChain(argumentExpression, parameter, applyTagFunction, tag, topmostReceiverObject)
+    }
+
+    private fun modifyExpressionChain(
+        argumentExpression: IrCall,
+        parameter: IrValueParameter,
+        applyTagFunction: IrSimpleFunctionSymbol,
+        tag: String,
+        topmostReceiverObject: IrExpression?
+    ): IrCallImpl? {
+
+        if (topmostReceiverObject?.type?.isComposeModifierObject() != true) return null
+
         val thenFunction = thenFunction
-        if (topmostReceiverObject?.type?.isComposeModifierObject() != true || modifierObjectClass == null || thenFunction == null) return null
+        val modifierObjectClass = modifierObjectClass
+
+        if (thenFunction == null || modifierObjectClass == null) return null
 
         val modifierObject = IrGetObjectValueImpl(
             startOffset = UNDEFINED_OFFSET,
@@ -248,7 +280,7 @@ internal class TestTagApplier(
             putValueArgument(0, tag.toIrConst(pluginContext.irBuiltIns.stringType))
         }
 
-        val thenCall = IrCallImpl(
+        return IrCallImpl(
             startOffset = UNDEFINED_OFFSET,
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
@@ -259,8 +291,37 @@ internal class TestTagApplier(
             dispatchReceiver = applyTagCall
             putValueArgument(0, argumentExpression)
         }
+    }
 
-        return thenCall
+    private fun modifyExpressionChainForIrGetValue(
+        argumentExpression: IrCall,
+        parameter: IrValueParameter,
+        applyTagFunction: IrSimpleFunctionSymbol,
+        tag: String,
+        topmostReceiverObject: IrGetValue
+    ): IrCallImpl? {
+
+        val thenFunction = thenFunction
+        val topExpression = modifyIrGetValue(
+            topmostReceiverObject,
+            parameter,
+            tag,
+            applyTagFunction
+        )
+
+        if (thenFunction == null || topExpression == null) return null
+
+        return IrCallImpl(
+            startOffset = UNDEFINED_OFFSET,
+            endOffset = UNDEFINED_OFFSET,
+            type = parameter.type,
+            symbol = thenFunction,
+            typeArgumentsCount = 0,
+            valueArgumentsCount = 1,
+        ).apply {
+            dispatchReceiver = topExpression
+            putValueArgument(0, argumentExpression)
+        }
     }
 
     private fun IrCall.getTopmostReceiverCall(): IrCall =
@@ -335,7 +396,9 @@ internal class TestTagApplier(
             Name.identifier("then")
         )
         val testTagRegex = "applyTestTag|testTag".toRegex()
-        val applyTagCallableId =
-            CallableId(FqName("com.vk.compose.test.tag.applier"), Name.identifier("applyTestTag"))
+        val applyTagCallableId = CallableId(
+                FqName("com.vk.compose.test.tag.applier"),
+                Name.identifier("applyTestTag")
+            )
     }
 }
