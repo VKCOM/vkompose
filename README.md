@@ -15,13 +15,13 @@ Currently, the following compiler plugins are available:
 - Test tag generator for Composable functions: Adds generated test tag for composable function if there is a default Modifier that does not have an applied testTag.
 - Test tag remover: Removes all test tags by replacing them with an empty string.
 - Test tag drawer: Draws test tags in a dialog for long tap. (It`s very experimental. I am looking for a better solution)
-- SourceInformation function calls remover: Yes, you can use sourceInformation option for Compose Compiler "-Pplugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false", but AGP enables that by default for debug builds.
+- SourceInformation function calls remover: Yes, you can use sourceInformation option for Compose Compiler "-Pplugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false", but AGP enables that by default for debug builds. For AGP 8.4.0 see use Compose Compiler option. You can see fix [here](https://issuetracker.google.com/issues/318384658)
 
 How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.4.1"
+    id("com.vk.vkompose") version "0.4.2"
 }
 ```
 
@@ -65,13 +65,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.4.1"
-    id("com.vk.recompose-logger") version "0.4.1"
-    id("com.vk.compose-test-tag-applier") version "0.4.1"
-    id("com.vk.compose-test-tag-cleaner") version "0.4.1"
-    id("com.vk.compose-test-tag-drawer") version "0.4.1"
-    id("com.vk.compose-source-information-cleaner") version "0.4.1"
-    id("com.vk.composable-skippability-checker") version "0.4.1"
+    id("com.vk.recompose-highlighter") version "0.4.2"
+    id("com.vk.recompose-logger") version "0.4.2"
+    id("com.vk.compose-test-tag-applier") version "0.4.2"
+    id("com.vk.compose-test-tag-cleaner") version "0.4.2"
+    id("com.vk.compose-test-tag-drawer") version "0.4.2"
+    id("com.vk.compose-source-information-cleaner") version "0.4.2"
+    id("com.vk.composable-skippability-checker") version "0.4.2"
 }
 
 recomposeHighlighter {
@@ -131,7 +131,7 @@ You can download and install it from the jar file for [Hedgehog](idea-plugin/vko
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
 ```kotlin
 dependencies {
-    detektPlugins("com.vk.vkompose:detekt:0.4.1")
+    detektPlugins("com.vk.vkompose:detekt:0.4.2")
 }
 ```
 
