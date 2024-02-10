@@ -372,10 +372,10 @@ class StabilityInferencer(
             }
 
             kotlinType.isInlineClassType() || kotlinType.isValueClassType() -> {
-                if (kotlinType.hasAnnotation(ComposeClassName.StableMarker)) {
+                val descriptor = kotlinType.constructor.declarationDescriptor as? ClassDescriptor
+                if (descriptor?.hasStableMarkerAnnotation() == true) {
                     KtStability.Stable
                 } else {
-                    val descriptor = kotlinType.constructor.declarationDescriptor as? ClassDescriptor
                     val type = descriptor?.inlineClassRepresentation?.underlyingType as? KotlinType
                     if (type != null) {
                         ktStabilityOf(

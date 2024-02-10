@@ -78,11 +78,11 @@ fun KtDeclaration.resolveToDescriptorIfAny(bindingContext: BindingContext): Decl
     }
 }
 
-fun KotlinType.isValueClass(): Boolean = constructor.declarationDescriptor?.isValueClass() ?: false
+fun KotlinType.isValueClassType(): Boolean = constructor.declarationDescriptor?.isValueClass() ?: false
 
 fun ClassifierDescriptor.isValueClass(): Boolean = isInlineClass() || isMultiFieldValueClass()
 
-fun KotlinType.isInlineClass(): Boolean = constructor.declarationDescriptor?.isInlineClass() ?: false
+fun KotlinType.isInlineClassType(): Boolean = constructor.declarationDescriptor?.isInlineClass() ?: false
 
 fun ClassifierDescriptor.isInlineClass(): Boolean = this is ClassDescriptor && this.valueClassRepresentation is InlineClassRepresentation
 

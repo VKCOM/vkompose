@@ -15,7 +15,6 @@ import com.vk.idea.plugin.vkompose.extensions.getQualifiedName
 import com.vk.idea.plugin.vkompose.extensions.type
 import com.vk.idea.plugin.vkompose.utils.hasAnnotation
 import com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
 import org.jetbrains.kotlin.idea.caches.resolve.findModuleDescriptor
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny

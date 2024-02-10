@@ -1,7 +1,8 @@
 package com.vk.rules.compose
 
-import com.vk.rules.compose.utils.isInlineClass
+import com.vk.rules.compose.utils.isInlineClassType
 import com.vk.rules.compose.utils.isValueClass
+import com.vk.rules.compose.utils.isValueClassType
 import com.vk.rules.compose.utils.resolveDelegateType
 import com.vk.rules.compose.utils.toClassDescriptor
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
@@ -31,7 +32,6 @@ import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.AbbreviatedType
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeUtils
-import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.hasAnnotation
 import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.isPrimitiveType
 import org.jetbrains.kotlin.types.getAbbreviation
 import org.jetbrains.kotlin.types.isDynamic
@@ -353,11 +353,11 @@ class StabilityInferencer() {
                 )
             }
 
-            kotlinType.isInlineClass() || kotlinType.isValueClass() -> {
-                if (kotlinType.hasAnnotation(ComposeClassName.StableMarker)) {
+            kotlinType.isInlineClassType() || kotlinType.isValueClassType() -> {
+                val descriptor = kotlinType.constructor.declarationDescriptor as? ClassDescriptor
+                if (descriptor?.hasStableMarkerAnnotation() == true) {
                     KtStability.Stable
                 } else {
-                    val descriptor = kotlinType.constructor.declarationDescriptor as? ClassDescriptor
                     val type = descriptor?.inlineClassRepresentation?.underlyingType as? KotlinType
                     if (type != null) {
                         ktStabilityOf(
