@@ -125,7 +125,7 @@ The IDEA plugin currently offers two features:
 
 Both features can be disabled in preferences:
 ![vkompose-idea-plugin-preferences.png](art/vkompose-idea-plugin-preferences.png)
-You can download and install it from the jar file for [Hedgehog](idea-plugin/vkompose/vkompose-0.2.1-Hedgehog.jar), [Iguana](idea-plugin/vkompose/vkompose-0.2.1-Iguana.jar) or [Jellyfish](idea-plugin/vkompose/vkompose-0.2.1-Jellyfish.jar) versions of AS.
+You can download and install it from the jar file for [Hedgehog](idea-plugin/vkompose/vkompose-0.2.1-Hedgehog.jar), [Iguana](idea-plugin/vkompose/vkompose-0.2.1-Iguana.jar), [Jellyfish](idea-plugin/vkompose/vkompose-0.2.1-Jellyfish.jar) or [Koala](idea-plugin/vkompose/vkompose-0.2.1-Koala.jar) versions of AS.
 
 ### [Detekt](https://github.com/detekt/detekt) Rule
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.

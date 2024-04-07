@@ -2,9 +2,10 @@ enum class Version(val ideaVersion: String, val versionName: String, val sinceBu
     Hedgehog("2023.1.4", "Hedgehog", "223", "231.*"),
     Iguana("2023.2", "Iguana", "232"),
     Jellyfish("2023.3", "Jellyfish", "232"),
+    Koala("2024.1", "Koala", "241"),
 }
 
-val currentVersion = Version.Jellyfish
+val currentVersion = Version.Koala
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.8.22"
