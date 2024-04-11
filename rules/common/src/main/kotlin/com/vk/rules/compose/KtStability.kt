@@ -216,7 +216,13 @@ private fun ClassDescriptor.isProtobufType(): Boolean {
 //        ?.getValueArgument(0) as? IrConst<*>
 //            )?.value as? Int
 
-class StabilityInferencer() {
+
+private data class SymbolForAnalysis(
+    val symbol: ClassDescriptor,
+    val typeParameters: List<KotlinType?>
+)
+
+class StabilityInferencer {
 
     private var currentModule: ModuleDescriptor? = null
     private lateinit var bindingContext: BindingContext
@@ -236,9 +242,11 @@ class StabilityInferencer() {
     private fun ktStabilityOf(
         classSymbol: ClassDescriptor,
         substitutions: Map<TypeParameterDescriptor, KotlinType>,
-        currentlyAnalyzing: Set<ClassDescriptor>
+        currentlyAnalyzing: Set<SymbolForAnalysis>
     ): KtStability {
-        if (currentlyAnalyzing.contains(classSymbol)) return KtStability.Unstable("recursive analyse ${classSymbol.name}")
+        val typeArguments = classSymbol.declaredTypeParameters.map { substitutions[it] }
+        val fullSymbol = SymbolForAnalysis(classSymbol, typeArguments)
+        if (currentlyAnalyzing.contains(fullSymbol)) return KtStability.Unstable("recursive analyse ${classSymbol.name}")
         if (classSymbol.hasStableMarkedDescendant()) return KtStability.Stable
         if (classSymbol.kind.isEnumClass || classSymbol.kind == ClassKind.ENUM_ENTRY) return KtStability.Stable
         if (classSymbol.defaultType.isPrimitiveType()) return KtStability.Stable
@@ -248,7 +256,7 @@ class StabilityInferencer() {
 //        error("Builtins Stub: ${declaration.name}")
 //    }
 
-        val analyzing = currentlyAnalyzing + classSymbol
+        val analyzing = currentlyAnalyzing + fullSymbol
 
         val funModule = currentModule
         if (canInferStability(classSymbol) || (funModule != null && funModule.name != classSymbol.module.name) ) {
@@ -323,7 +331,7 @@ class StabilityInferencer() {
     private fun ktStabilityOf(
         kotlinType: KotlinType,
         substitutions: Map<TypeParameterDescriptor, KotlinType>,
-        currentlyAnalyzing: Set<ClassDescriptor>
+        currentlyAnalyzing: Set<SymbolForAnalysis>
     ): KtStability {
         return when {
             kotlinType.isDynamic() -> KtStability.Unstable("DynamicType")
@@ -404,7 +412,7 @@ class StabilityInferencer() {
     private fun retrieveParameterMask(
         classSymbol: ClassDescriptor,
         substitutions: Map<TypeParameterDescriptor, KotlinType>,
-        currentlyAnalyzing: Set<ClassDescriptor>
+        currentlyAnalyzing: Set<SymbolForAnalysis>
     ): Int? {
 
         if (

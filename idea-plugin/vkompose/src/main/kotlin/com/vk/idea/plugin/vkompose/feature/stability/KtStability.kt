@@ -27,7 +27,6 @@ import org.jetbrains.kotlin.resolve.isInlineClassType
 import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeUtils
-import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.hasAnnotation
 import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.isPrimitiveType
 import org.jetbrains.kotlin.types.getAbbreviation
 import org.jetbrains.kotlin.types.isDynamic
@@ -214,6 +213,11 @@ private fun ClassDescriptor.isProtobufType(): Boolean {
 //        ?.getValueArgument(0) as? IrConst<*>
 //            )?.value as? Int
 
+private data class SymbolForAnalysis(
+    val symbol: ClassDescriptor,
+    val typeParameters: List<KotlinType?>
+)
+
 class StabilityInferencer(
     externalStableTypeMatchers: Set<FqNameMatcher>
 ) {
@@ -233,9 +237,11 @@ class StabilityInferencer(
     private fun ktStabilityOf(
         declaration: ClassDescriptor,
         substitutions: Map<TypeParameterDescriptor, KotlinType>,
-        currentlyAnalyzing: Set<ClassDescriptor>
+        currentlyAnalyzing: Set<SymbolForAnalysis>
     ): KtStability {
-        if (currentlyAnalyzing.contains(declaration)) return KtStability.Unstable("recursive analyse ${declaration.name}")
+        val typeArguments = declaration.declaredTypeParameters.map { substitutions[it] }
+        val fullSymbol = SymbolForAnalysis(declaration, typeArguments)
+        if (currentlyAnalyzing.contains(fullSymbol)) return KtStability.Unstable("recursive analyse ${declaration.name}")
         if (declaration.hasStableMarkedDescendant()) return KtStability.Stable
         if (declaration.kind.isEnumClass || declaration.kind == ClassKind.ENUM_ENTRY) return KtStability.Stable
         if (declaration.defaultType.isPrimitiveType()) return KtStability.Stable
@@ -245,7 +251,7 @@ class StabilityInferencer(
 //        error("Builtins Stub: ${declaration.name}")
 //    }
 
-        val analyzing = currentlyAnalyzing + declaration
+        val analyzing = currentlyAnalyzing + fullSymbol
 
         val funModule = currentModule
         val isFromDifferentModule = funModule != null && funModule.name != declaration.module.name
@@ -341,7 +347,7 @@ class StabilityInferencer(
     private fun ktStabilityOf(
         kotlinType: KotlinType,
         substitutions: Map<TypeParameterDescriptor, KotlinType>,
-        currentlyAnalyzing: Set<ClassDescriptor>
+        currentlyAnalyzing: Set<SymbolForAnalysis>
     ): KtStability {
         return when {
             kotlinType.isDynamic() -> KtStability.Unstable("DynamicType")
@@ -422,7 +428,7 @@ class StabilityInferencer(
     private fun retrieveParameterMask(
         classSymbol: ClassDescriptor,
         substitutions: Map<TypeParameterDescriptor, KotlinType>,
-        currentlyAnalyzing: Set<ClassDescriptor>
+        currentlyAnalyzing: Set<SymbolForAnalysis>
     ): Int? {
 
         if (
