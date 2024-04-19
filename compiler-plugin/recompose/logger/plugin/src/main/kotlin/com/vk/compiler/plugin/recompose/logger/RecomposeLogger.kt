@@ -2,6 +2,7 @@ package com.vk.compiler.plugin.recompose.logger
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ir.isAnonymous
+import org.jetbrains.kotlin.backend.jvm.codegen.isExtensionFunctionType
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrFile
@@ -37,10 +38,12 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.popLast
 
 internal class RecomposeLogger(
-    pluginContext: IrPluginContext
+    pluginContext: IrPluginContext,
+    logModifierChanges: Boolean,
+    logFunctionChanges: Boolean
 ) : IrElementTransformerVoid() {
 
-    private val bodyTransformer = BodyCallsStatementsTransformer(pluginContext)
+    private val bodyTransformer = BodyCallsStatementsTransformer(pluginContext, logModifierChanges, logFunctionChanges)
 
     private var currentFunction: FunctionInfo? = null
     private val filesStack = mutableListOf<IrFile>()
@@ -117,7 +120,11 @@ internal class RecomposeLogger(
         }
     }
 
-    private class BodyCallsStatementsTransformer(private val pluginContext: IrPluginContext) {
+    private class BodyCallsStatementsTransformer(
+        private val pluginContext: IrPluginContext,
+        private val logModifierChanges: Boolean,
+        private val logFunctionChanges: Boolean
+    ) {
 
         private val loggerFunctionSymbol by lazy {
             pluginContext.referenceFunctions(recomposeLoggerCallableId).firstOrNull()?.owner?.symbol
@@ -166,10 +173,9 @@ internal class RecomposeLogger(
 
                 for (index in 0 until call.valueArgumentsCount) {
                     val parameter = callFunctionOwner.valueParameters[index]
-                    val expression = call.getValueArgument(index)
-                    if (parameter.isComposeModifier() || expression == null || expression.isFunctionReference()) continue
-                    arguments[parameter.name.asString()] =
-                        expression.deepCopySavingMetadata(outerFunction)
+                    val expression = call.getValueArgument(index) ?: continue
+                    if ((parameter.isComposeModifier() && !logModifierChanges) || (expression.isFunctionReference() && !logFunctionChanges)) continue
+                    arguments[parameter.name.asString()] = expression.deepCopySavingMetadata(outerFunction)
                 }
 
                 val logName = "$prefixLogName:${callFunctionName.asString()}"

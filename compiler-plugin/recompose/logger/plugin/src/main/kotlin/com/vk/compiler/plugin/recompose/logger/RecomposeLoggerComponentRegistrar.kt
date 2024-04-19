@@ -12,8 +12,10 @@ class RecomposeLoggerComponentRegistrar : ComponentRegistrar {
 
     override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
         if (configuration.get(RecomposeLoggerCommandLineProcessor.ENABLED, true)) {
+            val logModifierChanges = configuration.get(RecomposeLoggerCommandLineProcessor.LOG_MODIFIER_CHANGES, true)
+            val logFunctionChanges = configuration.get(RecomposeLoggerCommandLineProcessor.LOG_FUNCTION_CHANGES, true)
             project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(RecomposeLoggerIrGeneration(), LoadingOrder.FIRST)
+                .registerExtension(RecomposeLoggerIrGeneration(logModifierChanges, logFunctionChanges), LoadingOrder.FIRST)
         }
     }
 

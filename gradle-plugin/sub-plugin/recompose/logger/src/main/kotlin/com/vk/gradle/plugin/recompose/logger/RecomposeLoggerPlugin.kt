@@ -22,7 +22,11 @@ class RecomposeLoggerPlugin : KotlinCompilerPluginSupportPlugin {
         val project = kotlinCompilation.target.project
 
         return project.provider {
-            listOf(SubpluginOption("enabled", project.isPluginEnabled().toString()))
+            listOf(
+                SubpluginOption("enabled", project.isPluginEnabled().toString()),
+                SubpluginOption("logModifierChanges", project.logModifierChanges().toString()),
+                SubpluginOption("logFunctionChanges", project.logFunctionChanges().toString()),
+            )
         }
     }
 
@@ -42,10 +46,14 @@ class RecomposeLoggerPlugin : KotlinCompilerPluginSupportPlugin {
         }
     }
 
-    private fun Project.isPluginEnabled(): Boolean {
-        val extension = project.extensions.findByType(RecomposeLoggerExtension::class.java)
+    private fun Project.isPluginEnabled(): Boolean = getExtension().isEnabled
+
+    private fun Project.logModifierChanges(): Boolean = getExtension().logModifierChanges
+    private fun Project.logFunctionChanges(): Boolean = getExtension().logFunctionChanges
+
+    private fun Project.getExtension(): RecomposeLoggerExtension {
+        return project.extensions.findByType(RecomposeLoggerExtension::class.java)
             ?: project.extensions.create(EXTENSION_NAME, RecomposeLoggerExtension::class.java)
-        return extension.isEnabled
     }
 
     companion object {

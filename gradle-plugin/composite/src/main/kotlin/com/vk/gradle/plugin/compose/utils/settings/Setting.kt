@@ -19,17 +19,41 @@ sealed class Setting {
     internal abstract fun setup(project: Project)
 }
 
+class RecomposeLoggerSetting : Setting() {
+    override var isEnabled: Boolean = true
+
+    @JvmField
+    var logModifierChanges = true
+    @JvmField
+    var logFunctionChanges = false
+
+    override fun setup(project: Project) {
+        project.extensions.getByType<RecomposeLoggerExtension>().isEnabled = isEnabled
+        project.extensions.getByType<RecomposeLoggerExtension>().logModifierChanges = logModifierChanges
+        project.extensions.getByType<RecomposeLoggerExtension>().logFunctionChanges = logFunctionChanges
+    }
+}
+
 class RecomposeSetting : Setting() {
     override val isEnabled: Boolean = true
 
+    private var loggerSetting = RecomposeLoggerSetting()
     @JvmField
     var isHighlighterEnabled = false
+
     @JvmField
     var isLoggerEnabled = false
 
     override fun setup(project: Project) {
         project.extensions.getByType<RecomposeHighlighterExtension>().isEnabled = isHighlighterEnabled
-        project.extensions.getByType<RecomposeLoggerExtension>().isEnabled = isLoggerEnabled
+        if (isLoggerEnabled) {
+            loggerSetting.setup(project)
+        }
+    }
+
+    fun Project.logger(configure: RecomposeLoggerSetting.() -> Unit) {
+        loggerSetting.apply(configure)
+        loggerSetting.setup(this)
     }
 }
 
