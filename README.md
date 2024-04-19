@@ -43,7 +43,7 @@ vkompose {
         // or
         logger {
             logModifierChanges = true // true by default since 0.5.0
-            logFunctionChanges = true // false by default. log when function arguments of composable function are changed
+            logFunctionChanges = true // true by default since 0.5.0. log when function arguments (like lambdas or function references) of composable function are changed
         }
     }
 
@@ -86,7 +86,7 @@ recomposeHighlighter {
 recomposeLogger {
     isEnabled = false // true by default
     logModifierChanges = true // true by default since 0.5.0
-    logFunctionChanges = true // false by default
+    logFunctionChanges = true // true by default since 0.5.0
 }
 
 composeTestTagApplier {

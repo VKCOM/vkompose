@@ -3,11 +3,15 @@ package com.vk.compiler.plugin.recompose.logger
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ir.isAnonymous
 import org.jetbrains.kotlin.backend.jvm.codegen.isExtensionFunctionType
+import org.jetbrains.kotlin.fir.types.ConeTypeParameterType
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
+import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.declarations.impl.IrVariableImpl
 import org.jetbrains.kotlin.ir.declarations.name
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrBody
@@ -16,11 +20,14 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionReference
 import org.jetbrains.kotlin.ir.expressions.IrRawFunctionReference
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.impl.IrVariableSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.isUnit
@@ -36,6 +43,9 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.popLast
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 internal class RecomposeLogger(
     pluginContext: IrPluginContext,
@@ -125,6 +135,7 @@ internal class RecomposeLogger(
         private val logModifierChanges: Boolean,
         private val logFunctionChanges: Boolean
     ) {
+        private val counter = AtomicInteger()
 
         private val loggerFunctionSymbol by lazy {
             pluginContext.referenceFunctions(recomposeLoggerCallableId).firstOrNull()?.owner?.symbol
@@ -140,15 +151,23 @@ internal class RecomposeLogger(
 
             val modifiedStatements = mutableListOf<IrStatement>()
             for (statement in body.statements) {
-                modifiedStatements += statement
                 if (statement is IrCall && !statement.isRecomposeLoggerFunction()) {
-                    val logger = createRecomposeLoggerCall(
+                    val result = createRecomposeLoggerCall(
                         outerFunction,
                         loggerFunction,
                         prefixLogName,
                         statement
                     )
-                    if (logger != null) modifiedStatements += logger
+                    if (result != null) {
+                        val (logger, variables) = result
+                        modifiedStatements += variables
+                        modifiedStatements += statement
+                        modifiedStatements += logger
+                    } else {
+                        modifiedStatements += statement
+                    }
+                } else {
+                    modifiedStatements += statement
                 }
             }
 
@@ -163,10 +182,11 @@ internal class RecomposeLogger(
             loggerFunctionSymbol: IrSimpleFunctionSymbol,
             prefixLogName: String,
             call: IrCall
-        ): IrCall? {
+        ): Pair<IrCallImpl, MutableList<IrVariable>>? {
             val callFunctionOwner = call.symbol.owner
             val callFunctionName = callFunctionOwner.name
 
+            val variables = mutableListOf<IrVariable>()
             if (call.isValidComposableCall()) {
 
                 val arguments = mutableMapOf<String, IrExpression>()
@@ -174,8 +194,25 @@ internal class RecomposeLogger(
                 for (index in 0 until call.valueArgumentsCount) {
                     val parameter = callFunctionOwner.valueParameters[index]
                     val expression = call.getValueArgument(index) ?: continue
-                    if ((parameter.isComposeModifier() && !logModifierChanges) || (expression.isFunctionReference() && !logFunctionChanges)) continue
-                    arguments[parameter.name.asString()] = expression.deepCopySavingMetadata(outerFunction)
+                    if ((parameter.isComposeModifier() && !logModifierChanges) || (expression.isFunctionReference() && (!logFunctionChanges))) continue
+                    if (expression.isFunctionReference()) {
+                        val variable = handleFunctionReferenceArgument(
+                            parameter,
+                            expression,
+                            outerFunction,
+                            call,
+                            index,
+                        )
+                        variables += variable
+                        arguments[parameter.name.asString()] = IrGetValueImpl(
+                            expression.startOffset,
+                            expression.endOffset,
+                            expression.type,
+                            variable.symbol,
+                        )
+                    } else {
+                        arguments[parameter.name.asString()] = expression.deepCopySavingMetadata(outerFunction)
+                    }
                 }
 
                 val logName = "$prefixLogName:${callFunctionName.asString()}"
@@ -192,10 +229,41 @@ internal class RecomposeLogger(
                         1,
                         createRecomposeLoggerArgumentsExpression(arguments)
                     )
-                }
+                } to variables
 
             }
             return null
+        }
+
+        private fun handleFunctionReferenceArgument(
+            parameter: IrValueParameter,
+            expression: IrExpression,
+            outerFunction: IrFunction,
+            call: IrCall,
+            index: Int,
+        ): IrVariableImpl {
+            val variable = IrVariableImpl(
+                startOffset = UNDEFINED_OFFSET,
+                endOffset = UNDEFINED_OFFSET,
+                origin = IrDeclarationOrigin.DEFINED,
+                symbol = IrVariableSymbolImpl(),
+                name = Name.identifier("$${parameter.name.asString()}${expression.startOffset}${counter.incrementAndGet()}"),
+                type = parameter.type,
+                isVar = false,
+                isConst = false,
+                isLateinit = false
+            )
+            variable.parent = outerFunction
+            variable.initializer = expression
+            call.putValueArgument(
+                index, IrGetValueImpl(
+                    expression.startOffset,
+                    expression.endOffset,
+                    expression.type,
+                    variable.symbol,
+                )
+            )
+            return variable
         }
 
         private fun createRecomposeLoggerArgumentsExpression(
@@ -297,6 +365,4 @@ internal class RecomposeLogger(
             return symbol.owner.fqNameWhenAvailable == recomposeLoggerCallableId.asSingleFqName()
         }
     }
-
 }
-
