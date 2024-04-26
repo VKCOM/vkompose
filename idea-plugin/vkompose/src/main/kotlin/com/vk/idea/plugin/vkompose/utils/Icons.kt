@@ -3,11 +3,9 @@ package com.vk.idea.plugin.vkompose.utils
 import com.intellij.openapi.util.IconLoader
 import javax.swing.Icon
 
-object Icons {
+internal object Icons {
 
     val ComposeTestTag = loadIcon("/icons/compose_test_tag_icon.svg")
 
-    fun loadIcon(res: String): Icon {
-        return IconLoader.getIcon(res, Icons::class.java)
-    }
+    private fun loadIcon(res: String): Icon = IconLoader.getIcon(res, Icons::class.java)
 }
