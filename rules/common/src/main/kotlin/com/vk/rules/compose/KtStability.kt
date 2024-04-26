@@ -240,17 +240,17 @@ class StabilityInferencer {
 
     @Suppress("ReturnCount", "NestedBlockDepth") // expected
     private fun ktStabilityOf(
-        classSymbol: ClassDescriptor,
+        declaration: ClassDescriptor,
         substitutions: Map<TypeParameterDescriptor, KotlinType>,
         currentlyAnalyzing: Set<SymbolForAnalysis>
     ): KtStability {
-        val typeArguments = classSymbol.declaredTypeParameters.map { substitutions[it] }
-        val fullSymbol = SymbolForAnalysis(classSymbol, typeArguments)
-        if (currentlyAnalyzing.contains(fullSymbol)) return KtStability.Unstable("recursive analyse ${classSymbol.name}")
-        if (classSymbol.hasStableMarkedDescendant()) return KtStability.Stable
-        if (classSymbol.kind.isEnumClass || classSymbol.kind == ClassKind.ENUM_ENTRY) return KtStability.Stable
-        if (classSymbol.defaultType.isPrimitiveType()) return KtStability.Stable
-        if (classSymbol.isProtobufType()) return KtStability.Stable
+        val typeArguments = declaration.declaredTypeParameters.map { substitutions[it] }
+        val fullSymbol = SymbolForAnalysis(declaration, typeArguments)
+        if (currentlyAnalyzing.contains(fullSymbol)) return KtStability.Unstable("recursive analyse ${declaration.name}")
+        if (declaration.hasStableMarkedDescendant()) return KtStability.Stable
+        if (declaration.kind.isEnumClass || declaration.kind == ClassKind.ENUM_ENTRY) return KtStability.Stable
+        if (declaration.defaultType.isPrimitiveType()) return KtStability.Stable
+        if (declaration.isProtobufType()) return KtStability.Stable
 
 //    if (classSymbol == IrDeclarationOrigin.IR_BUILTINS_STUB) {
 //        error("Builtins Stub: ${declaration.name}")
@@ -259,47 +259,61 @@ class StabilityInferencer {
         val analyzing = currentlyAnalyzing + fullSymbol
 
         val funModule = currentModule
-        if (canInferStability(classSymbol) || (funModule != null && funModule.name != classSymbol.module.name) ) {
-            val fqName = classSymbol.classId?.asFqNameString()
+        val isFromDifferentModule = funModule != null && funModule.name != declaration.module.name
+        if (canInferStability(declaration) || isFromDifferentModule) {
+            val fqName = declaration.classId?.asFqNameString()
+            val typeParameters = declaration.declaredTypeParameters
             val stability: KtStability
             val mask: Int
             if (KnownStableConstructs.stableTypes.contains(fqName)) {
                 mask = KnownStableConstructs.stableTypes[fqName] ?: 0
                 stability = KtStability.Stable
             } else {
-                mask = retrieveParameterMask(classSymbol, substitutions, analyzing)
-                    ?: return KtStability.Unstable("type ${classSymbol.name} doesn't have @StabilityInferred")
-                stability = KtStability.Runtime(classSymbol)
-            }
-            return stability + KtStability.Combined(
-                classSymbol.declaredTypeParameters.mapIndexedNotNull { index, parameter ->
-                    if (mask and (0b1 shl index) != 0) {
-                        val type = substitutions[parameter]
-                        if (type != null)
-                            ktStabilityOf(type, substitutions, analyzing)
-                        else
-                            KtStability.Stable
-                    } else null
+                val bitmask = retrieveParameterMask(declaration)
+                    ?: return KtStability.Unstable("type ${declaration.name} doesn't have @StabilityInferred")
+
+                val knownStableMask = if (typeParameters.size < 32) 0b1 shl typeParameters.size else 0
+                val isKnownStable = bitmask and knownStableMask != 0
+                mask = bitmask and knownStableMask.inv()
+
+                stability = if (isKnownStable && !isFromDifferentModule) {
+                    KtStability.Stable
+                } else {
+                    KtStability.Runtime(declaration)
                 }
-            )
-        } else if (classSymbol.isJavaDescriptor) {
-            return KtStability.Unstable("type from Java: ${classSymbol.name}")
+            }
+            return when {
+                mask == 0 || typeParameters.isEmpty() -> stability
+                else -> stability + KtStability.Combined(
+                    typeParameters.mapIndexedNotNull { index, parameter ->
+                        if (mask and (0b1 shl index) != 0) {
+                            val type = substitutions[parameter]
+                            if (type != null)
+                                ktStabilityOf(type, substitutions, analyzing)
+                            else
+                                KtStability.Stable
+                        } else null
+                    }
+                )
+            }
+        } else if (declaration.isJavaDescriptor) {
+            return KtStability.Unstable("type from Java: ${declaration.name}")
         }
 
-        if (classSymbol.kind.isInterface) {
-            return KtStability.Unknown(classSymbol)
+        if (declaration.kind.isInterface) {
+            return KtStability.Unknown(declaration)
         }
 
         var stability = KtStability.Stable
 
-        for (member in classSymbol.unsubstitutedMemberScope.getDescriptorsFiltered()) {
+        for (member in declaration.unsubstitutedMemberScope.getDescriptorsFiltered()) {
             when (member) {
                 is PropertyDescriptor -> {
                     if (!member.kind.isReal) continue  // skip properties from parent
                     if (member.getter?.isDefault == false && !member.isVar && !member.isDelegated) continue // skip properties with non default getter because they are usually like function
 
                     member.backingField?.let {
-                        if (member.isVar && !member.isDelegated) return KtStability.Unstable("type ${classSymbol.name} contains non-delegated var ${member.name}")
+                        if (member.isVar && !member.isDelegated) return KtStability.Unstable("type ${declaration.name} contains non-delegated var ${member.name}")
                         stability += ktStabilityOf(
                             member.resolveDelegateType(bindingContext) ?: member.type,
                             substitutions,
@@ -408,42 +422,41 @@ class StabilityInferencer {
     }
 
 
-    @Suppress("NestedBlockDepth", "ComplexCondition") // expected
-    private fun retrieveParameterMask(
-        classSymbol: ClassDescriptor,
-        substitutions: Map<TypeParameterDescriptor, KotlinType>,
-        currentlyAnalyzing: Set<SymbolForAnalysis>
-    ): Int? {
-
+    @Suppress("NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod") // expected
+    private fun retrieveParameterMask(classDescriptor: ClassDescriptor): Int? {
         if (
-            (classSymbol.visibility !== DescriptorVisibilities.PUBLIC || classSymbol.visibility != DescriptorVisibilities.INTERNAL) ||
-            classSymbol.kind.isEnumClass ||
-            classSymbol.kind == ClassKind.ENUM_ENTRY ||
-            classSymbol.kind.isInterface ||
-            classSymbol.kind == ClassKind.ANNOTATION_CLASS ||
-            classSymbol.name == SpecialNames.NO_NAME_PROVIDED ||
-            classSymbol.isExpect ||
-            classSymbol.isInner ||
-            classSymbol.isCompanionObject ||
-            classSymbol.isInline ||
-            classSymbol.isValueClass() ||
-            !KotlinBuiltIns.isPrimitiveType(classSymbol.defaultType) && KotlinBuiltIns.isBuiltIn(classSymbol)
+            (classDescriptor.visibility != DescriptorVisibilities.PUBLIC && classDescriptor.visibility != DescriptorVisibilities.INTERNAL) ||
+            classDescriptor.kind.isEnumClass ||
+            classDescriptor.kind == ClassKind.ENUM_ENTRY ||
+            classDescriptor.kind.isInterface ||
+            classDescriptor.kind == ClassKind.ANNOTATION_CLASS ||
+            classDescriptor.name == SpecialNames.NO_NAME_PROVIDED ||
+            classDescriptor.isExpect ||
+            classDescriptor.isInner ||
+            classDescriptor.isCompanionObject ||
+            classDescriptor.isInline ||
+            classDescriptor.isValueClass() ||
+            !KotlinBuiltIns.isPrimitiveType(classDescriptor.defaultType) && KotlinBuiltIns.isBuiltIn(classDescriptor)
         ) return null
 
-        val stability = ktStabilityOf(classSymbol, substitutions, currentlyAnalyzing).normalize()
+        val savedModule = currentModule
+        currentModule = null
+        val stability = ktStabilityOf(classDescriptor, emptyMap(), emptySet()).normalize()
+        currentModule = savedModule
 
         var parameterMask = 0
 
-        if (classSymbol.declaredTypeParameters.isNotEmpty()) {
+        val typeParameters = classDescriptor.declaredTypeParameters
+        if (typeParameters.isNotEmpty()) {
 
             stability.forEach {
                 when (it) {
                     is KtStability.Parameter -> {
-                        val index = classSymbol.declaredTypeParameters.indexOf(it.parameter)
+                        val index = typeParameters.indexOf(it.parameter)
                         if (index != -1) {
                             // the stability of this parameter matters for the stability of the
                             // class
-                            parameterMask = parameterMask or 0b1 shl index
+                            parameterMask = parameterMask or (0b1 shl index)
                         }
                     }
 
@@ -451,6 +464,13 @@ class StabilityInferencer {
                         /* No action necessary */
                     }
                 }
+            }
+            if (stability.knownStable() && typeParameters.size < 32) {
+                parameterMask = parameterMask or (0b1 shl typeParameters.size)
+            }
+        } else {
+            if (stability.knownStable()) {
+                parameterMask = 0b1
             }
         }
         return parameterMask

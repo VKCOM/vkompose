@@ -268,11 +268,10 @@ class StabilityInferencer(
                     .maskForName(declaration.fqNameOrNull()) ?: 0
                 stability = KtStability.Stable
             } else {
-                val bitmask = retrieveParameterMask(declaration, substitutions, analyzing)
+                val bitmask = retrieveParameterMask(declaration)
                     ?: return KtStability.Unstable("type ${declaration.name} doesn't have @StabilityInferred")
 
-                val knownStableMask =
-                    if (typeParameters.size < 32) 0b1 shl typeParameters.size else 0
+                val knownStableMask = if (typeParameters.size < 32) 0b1 shl typeParameters.size else 0
                 val isKnownStable = bitmask and knownStableMask != 0
                 mask = bitmask and knownStableMask.inv()
 
@@ -424,42 +423,41 @@ class StabilityInferencer(
     }
 
 
-    @Suppress("NestedBlockDepth", "ComplexCondition") // expected
-    private fun retrieveParameterMask(
-        classSymbol: ClassDescriptor,
-        substitutions: Map<TypeParameterDescriptor, KotlinType>,
-        currentlyAnalyzing: Set<SymbolForAnalysis>
-    ): Int? {
-
+    @Suppress("NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod") // expected
+    private fun retrieveParameterMask(classDescriptor: ClassDescriptor): Int? {
         if (
-            (classSymbol.visibility !== DescriptorVisibilities.PUBLIC || classSymbol.visibility != DescriptorVisibilities.INTERNAL) ||
-            classSymbol.kind.isEnumClass ||
-            classSymbol.kind == ClassKind.ENUM_ENTRY ||
-            classSymbol.kind.isInterface ||
-            classSymbol.kind == ClassKind.ANNOTATION_CLASS ||
-            classSymbol.name == SpecialNames.NO_NAME_PROVIDED ||
-            classSymbol.isExpect ||
-            classSymbol.isInner ||
-            classSymbol.isCompanionObject ||
-            classSymbol.isInline ||
-            classSymbol.isValueClass() ||
-            !KotlinBuiltIns.isPrimitiveType(classSymbol.defaultType) && KotlinBuiltIns.isBuiltIn(classSymbol)
+            (classDescriptor.visibility != DescriptorVisibilities.PUBLIC && classDescriptor.visibility != DescriptorVisibilities.INTERNAL) ||
+            classDescriptor.kind.isEnumClass ||
+            classDescriptor.kind == ClassKind.ENUM_ENTRY ||
+            classDescriptor.kind.isInterface ||
+            classDescriptor.kind == ClassKind.ANNOTATION_CLASS ||
+            classDescriptor.name == SpecialNames.NO_NAME_PROVIDED ||
+            classDescriptor.isExpect ||
+            classDescriptor.isInner ||
+            classDescriptor.isCompanionObject ||
+            classDescriptor.isInline ||
+            classDescriptor.isValueClass() ||
+            !KotlinBuiltIns.isPrimitiveType(classDescriptor.defaultType) && KotlinBuiltIns.isBuiltIn(classDescriptor)
         ) return null
 
-        val stability = ktStabilityOf(classSymbol, substitutions, currentlyAnalyzing).normalize()
+        val savedModule = currentModule
+        currentModule = null
+        val stability = ktStabilityOf(classDescriptor, emptyMap(), emptySet()).normalize()
+        currentModule = savedModule
 
         var parameterMask = 0
 
-        if (classSymbol.declaredTypeParameters.isNotEmpty()) {
+        val typeParameters = classDescriptor.declaredTypeParameters
+        if (typeParameters.isNotEmpty()) {
 
             stability.forEach {
                 when (it) {
                     is KtStability.Parameter -> {
-                        val index = classSymbol.declaredTypeParameters.indexOf(it.parameter)
+                        val index = typeParameters.indexOf(it.parameter)
                         if (index != -1) {
                             // the stability of this parameter matters for the stability of the
                             // class
-                            parameterMask = parameterMask or 0b1 shl index
+                            parameterMask = parameterMask or (0b1 shl index)
                         }
                     }
 
@@ -467,6 +465,13 @@ class StabilityInferencer(
                         /* No action necessary */
                     }
                 }
+            }
+            if (stability.knownStable() && typeParameters.size < 32) {
+                parameterMask = parameterMask or (0b1 shl typeParameters.size)
+            }
+        } else {
+            if (stability.knownStable()) {
+                parameterMask = 0b1
             }
         }
         return parameterMask
