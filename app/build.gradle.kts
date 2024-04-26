@@ -1,5 +1,3 @@
-import io.gitlab.arturbosch.detekt.Detekt
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -70,19 +68,11 @@ android {
 
 }
 
-detekt {
-    config.setFrom(file("$rootDir/config/detekt-config.yml"))
-}
-
-tasks.withType<Detekt> { dependsOn(":rules:detekt:assemble") }
-
 dependencies {
-    detektPlugins(project(":rules:detekt"))
-
     implementation(platform(libs.compose.bom))
     androidTestImplementation(platform(libs.compose.bom))
-//    kotlinCompilerPluginClasspath(project(":compiler-plugin:composable-skippability-checker:plugin"))
-
+    kotlinCompilerPluginClasspath(project(":compiler-plugin:composable-skippability-checker:plugin"))
+    implementation(project(":app:module"))
 
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
