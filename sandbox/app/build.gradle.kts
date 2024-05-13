@@ -72,7 +72,7 @@ dependencies {
     implementation(platform(libs.compose.bom))
     androidTestImplementation(platform(libs.compose.bom))
     kotlinCompilerPluginClasspath(project(":compiler-plugin:composable-skippability-checker:plugin"))
-    implementation(project(":app:module"))
+    implementation(project(":sandbox:module"))
 
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)

@@ -19,8 +19,9 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Compilers"
-//include(":app")
-//include(":app:module")
+//include(":sandbox")
+//include(":sandbox:app")
+//include(":sandbox:module")
 
 include(":compiler-plugin")
 
