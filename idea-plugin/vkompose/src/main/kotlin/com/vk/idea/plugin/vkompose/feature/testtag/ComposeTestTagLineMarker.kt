@@ -37,10 +37,6 @@ import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.resolve.calls.model.ArgumentMatch
 
-private const val MODIFIER = "androidx.compose.ui.Modifier"
-private const val MODIFIER_COMPANION = "$MODIFIER.Companion"
-private val testTagRegex = "applyTestTag|testTag".toRegex()
-
 class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
     override fun getName(): String = "Generated test tag"
     override fun getIcon(): Icon = Icons.ComposeTestTag
@@ -180,6 +176,12 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
         /* alignment = */ GutterIconRenderer.Alignment.CENTER,
         /* accessibleNameProvider = */ { message },
     )
+
+    private companion object {
+        const val MODIFIER = "androidx.compose.ui.Modifier"
+        const val MODIFIER_COMPANION = "$MODIFIER.Companion"
+        val testTagRegex = "applyTestTag|testTag".toRegex()
+    }
 }
 
 private fun createNavHandler(tag: String): GutterIconNavigationHandler<LeafPsiElement> {

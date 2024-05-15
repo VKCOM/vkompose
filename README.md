@@ -128,11 +128,12 @@ The IDEA plugin currently offers two features:
 ![vkcompose-idea-plugin-skippability-error.gif](art/vkcompose-idea-plugin-skippability-error.gif)
 
 - Marker for generated test tag values
-!![vkcompose-idea-plugin-test-tag-marker.png](art/vkcompose-idea-plugin-test-tag-marker.png)
+![vkcompose-idea-plugin-test-tag-marker.png](art/vkcompose-idea-plugin-test-tag-marker.png)
 
 Both features can be disabled in preferences:
-![vkompose-idea-plugin-preferences.png](art/vkompose-idea-plugin-preferences.png)
-You can download and install it from the jar file for [Hedgehog](idea-plugin/vkompose/vkompose-0.2.3-Hedgehog.jar), [Iguana](idea-plugin/vkompose/vkompose-0.2.3-Iguana.jar), [Jellyfish](idea-plugin/vkompose/vkompose-0.2.3-Jellyfish.jar) or [Koala](idea-plugin/vkompose/vkompose-0.2.3-Koala.jar) versions of AS.
+![vkompose-idea-plugin-stability-preferences.png](art/vkompose-idea-plugin-stability-preferences.png)
+![vkompose-idea-plugin-test-tag-gutter-icon-preference.png](art/vkompose-idea-plugin-test-tag-gutter-icon-preference.png)
+You can download and install it from the jar file for [Iguana](idea-plugin/vkompose/vkompose-0.2.4-Iguana.jar), [Jellyfish](idea-plugin/vkompose/vkompose-0.2.4-Jellyfish.jar) or [Koala](idea-plugin/vkompose/vkompose-0.2.4-Koala.jar) versions of AS.
 
 ### [Detekt](https://github.com/detekt/detekt) Rule
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
