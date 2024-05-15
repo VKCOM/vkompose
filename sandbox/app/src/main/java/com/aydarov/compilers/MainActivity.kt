@@ -13,8 +13,3 @@ class MainActivity : ComponentActivity() {
     }
 
 }
-
-@Composable
-private fun TopBanner(state: TestState) {
-    Text(text = "Hello ${state.name}!")
-}

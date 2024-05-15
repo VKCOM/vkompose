@@ -21,7 +21,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.5"
+    id("com.vk.vkompose") version "0.5.1"
 }
 ```
 
@@ -42,8 +42,8 @@ vkompose {
         isLoggerEnabled = true
         // or
         logger {
-            logModifierChanges = true // true by default since 0.5.0
-            logFunctionChanges = true // true by default since 0.5.0. log when function arguments (like lambdas or function references) of composable function are changed
+            logModifierChanges = true // true by default since 0.5.1
+            logFunctionChanges = true // true by default since 0.5.1. log when function arguments (like lambdas or function references) of composable function are changed
         }
     }
 
@@ -70,13 +70,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.5"
-    id("com.vk.recompose-logger") version "0.5"
-    id("com.vk.compose-test-tag-applier") version "0.5"
-    id("com.vk.compose-test-tag-cleaner") version "0.5"
-    id("com.vk.compose-test-tag-drawer") version "0.5"
-    id("com.vk.compose-source-information-cleaner") version "0.5"
-    id("com.vk.composable-skippability-checker") version "0.5"
+    id("com.vk.recompose-highlighter") version "0.5.1"
+    id("com.vk.recompose-logger") version "0.5.1"
+    id("com.vk.compose-test-tag-applier") version "0.5.1"
+    id("com.vk.compose-test-tag-cleaner") version "0.5.1"
+    id("com.vk.compose-test-tag-drawer") version "0.5.1"
+    id("com.vk.compose-source-information-cleaner") version "0.5.1"
+    id("com.vk.composable-skippability-checker") version "0.5.1"
 }
 
 recomposeHighlighter {
@@ -85,8 +85,8 @@ recomposeHighlighter {
 
 recomposeLogger {
     isEnabled = false // true by default
-    logModifierChanges = true // true by default since 0.5.0
-    logFunctionChanges = true // true by default since 0.5.0
+    logModifierChanges = true // true by default since 0.5.1
+    logFunctionChanges = true // true by default since 0.5.1
 }
 
 composeTestTagApplier {
@@ -138,7 +138,7 @@ You can download and install it from the jar file for [Hedgehog](idea-plugin/vko
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
 ```kotlin
 dependencies {
-    detektPlugins("com.vk.vkompose:detekt:0.5")
+    detektPlugins("com.vk.vkompose:detekt:0.5.1")
 }
 ```
 
