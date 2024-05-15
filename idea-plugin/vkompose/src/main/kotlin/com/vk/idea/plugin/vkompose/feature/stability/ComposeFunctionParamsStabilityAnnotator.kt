@@ -6,15 +6,15 @@ import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.findParentOfType
+import com.vk.idea.plugin.vkompose.extensions.getQualifiedName
+import com.vk.idea.plugin.vkompose.extensions.type
+import com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent
 import com.vk.idea.plugin.vkompose.utils.COMPOSE_PACKAGE_NAME
 import com.vk.idea.plugin.vkompose.utils.ComposeClassName.Composable
 import com.vk.idea.plugin.vkompose.utils.ComposeClassName.ExplicitGroupsComposable
 import com.vk.idea.plugin.vkompose.utils.ComposeClassName.NonRestartableComposable
 import com.vk.idea.plugin.vkompose.utils.ComposeClassName.NonSkippableComposable
-import com.vk.idea.plugin.vkompose.extensions.getQualifiedName
-import com.vk.idea.plugin.vkompose.extensions.type
 import com.vk.idea.plugin.vkompose.utils.hasAnnotation
-import com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
 import org.jetbrains.kotlin.idea.caches.resolve.findModuleDescriptor
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
@@ -34,7 +34,10 @@ import org.jetbrains.kotlin.types.typeUtil.isUnit
 class ComposeFunctionParamsStabilityAnnotator : Annotator {
 
     private val settings = ComposeSettingStateComponent.getInstance()
-    private var ignoredClasses: List<Regex> = settings.stabilityChecksIgnoringClasses.split("\n").map { it.trim().toRegex() }
+    private var ignoredClasses: List<Regex> = settings.stabilityChecksIgnoringClasses
+        ?.split("\n")
+        ?.map { it.trim().toRegex() }
+        .orEmpty()
 
     private val stableTypeMatchers = try {
         StabilityConfigParser.fromFile(settings.stabilityConfigurationPath).stableTypeMatchers

@@ -14,34 +14,11 @@ import com.intellij.openapi.components.Storage
 internal class ComposeSettingStateComponent :
     SimplePersistentStateComponent<ComposeSettingStateComponent.State>(State()) {
 
-    var isTestTagHintShowed: Boolean
-        set(value) {
-            state.isTestTagHintShowed = value
-        }
-        get() = state.isTestTagHintShowed
-
-    var isFunctionSkippabilityCheckingEnabled: Boolean
-        set(value) {
-            state.isFunctionSkippabilityCheckingEnabled = value
-        }
-        get() = state.isFunctionSkippabilityCheckingEnabled
-
-    var stabilityChecksIgnoringClasses: String
-        set(value) {
-            state.stabilityChecksIgnoringClasses = value
-        }
-        get() = state.stabilityChecksIgnoringClasses.orEmpty()
-
-    var stabilityConfigurationPath: String
-        set(value) {
-            state.stabilityConfigurationPath = value
-        }
-        get() = state.stabilityConfigurationPath.orEmpty()
-
+    var isFunctionSkippabilityCheckingEnabled: Boolean by state::isFunctionSkippabilityCheckingEnabled
+    var stabilityChecksIgnoringClasses: String? by state::stabilityChecksIgnoringClasses
+    var stabilityConfigurationPath: String? by state::stabilityConfigurationPath
 
     class State : BaseState() {
-
-        var isTestTagHintShowed by property(true)
         var isFunctionSkippabilityCheckingEnabled by property(true)
         var stabilityChecksIgnoringClasses by string("")
         var stabilityConfigurationPath by string("")

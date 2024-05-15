@@ -11,7 +11,7 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.rows
 import com.intellij.ui.dsl.builder.selected
-import com.intellij.ui.layout.selected
+import com.intellij.ui.dsl.builder.toNonNullableProperty
 
 internal class ComposeConfigurable : BoundSearchableConfigurable("VKompose", "preferences.vkompose") {
 
@@ -19,13 +19,6 @@ internal class ComposeConfigurable : BoundSearchableConfigurable("VKompose", "pr
 
     override fun createPanel(): DialogPanel =
         panel {
-            row {
-                checkBox("Show marker with possible test tag value")
-                    .bindSelected(settings::isTestTagHintShowed)
-            }
-
-            separator()
-
             lateinit var skippabilityChecks: Cell<JBCheckBox>
             row {
                 skippabilityChecks = checkBox("Check parameters stability of composable functions")
@@ -40,7 +33,8 @@ internal class ComposeConfigurable : BoundSearchableConfigurable("VKompose", "pr
                 textFieldWithBrowseButton(
                     fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor(),
                     fileChosen = { newFile -> newFile.path }
-                ).align(AlignX.FILL).bindText(settings::stabilityConfigurationPath)
+                ).align(AlignX.FILL)
+                    .bindText(settings::stabilityConfigurationPath.toNonNullableProperty(""))
             }.visibleIf(skippabilityChecks.selected)
 
             row {
@@ -51,7 +45,7 @@ internal class ComposeConfigurable : BoundSearchableConfigurable("VKompose", "pr
                 textArea()
                     .rows(5)
                     .align(AlignX.FILL)
-                    .bindText(settings::stabilityChecksIgnoringClasses)
+                    .bindText(settings::stabilityChecksIgnoringClasses.toNonNullableProperty(""))
             }.visibleIf(skippabilityChecks.selected)
         }
 }
