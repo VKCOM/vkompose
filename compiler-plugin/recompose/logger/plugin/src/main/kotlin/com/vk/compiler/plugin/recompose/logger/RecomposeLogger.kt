@@ -2,8 +2,6 @@ package com.vk.compiler.plugin.recompose.logger
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ir.isAnonymous
-import org.jetbrains.kotlin.backend.jvm.codegen.isExtensionFunctionType
-import org.jetbrains.kotlin.fir.types.ConeTypeParameterType
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
@@ -20,7 +18,6 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionReference
 import org.jetbrains.kotlin.ir.expressions.IrRawFunctionReference
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
@@ -44,8 +41,6 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.popLast
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 
 internal class RecomposeLogger(
     pluginContext: IrPluginContext,
@@ -75,16 +70,17 @@ internal class RecomposeLogger(
     override fun visitBlockBody(body: IrBlockBody): IrBody {
 
         val lastFile = filesStack.lastOrNull()
-        val lastFunction = currentFunction?.searchNotAnonymous()
+        val lastFunctionInfo = currentFunction?.searchNotAnonymous()
 
-        if (lastFile == null || lastFunction == null || lastFunction.function.name.isSpecial) {
-            return super.visitBlockBody(body)
-        }
+        if (lastFile == null || lastFunctionInfo == null) return super.visitBlockBody(body)
+
+        val lastFunction = lastFunctionInfo.function
+        if (lastFunction.name.isSpecial || lastFunction.isInline) return super.visitBlockBody(body)
 
         val transformedBody = bodyTransformer.transform(
             body,
-            lastFunction.function,
-            createPrefixForRecomposeFunction(lastFile, lastFunction),
+            lastFunction,
+            createPrefixForRecomposeFunction(lastFile, lastFunctionInfo),
         )
 
         return super.visitBlockBody(transformedBody)
