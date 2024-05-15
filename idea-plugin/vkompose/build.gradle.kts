@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "com.vk.idea.plugin.vkompose"
-version = "0.2.3-${currentVersion.versionName}"
+version = "0.2.4-${currentVersion.versionName}"
 
 repositories {
     mavenCentral()
