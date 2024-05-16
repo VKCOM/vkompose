@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.declarations.impl.IrVariableImpl
 import org.jetbrains.kotlin.ir.declarations.name
+import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -143,37 +144,89 @@ internal class RecomposeLogger(
             outerFunction: IrFunction,
             prefixLogName: String
         ): IrBlockBody {
-
             val loggerFunction = loggerFunctionSymbol ?: return body
-
-            val modifiedStatements = mutableListOf<IrStatement>()
-            for (statement in body.statements) {
-                // todo check blocks
-                if (statement is IrCall && !statement.isRecomposeLoggerFunction()) {
-                    val result = createRecomposeLoggerCall(
-                        outerFunction,
-                        loggerFunction,
-                        prefixLogName,
-                        statement
-                    )
-                    if (result != null) {
-                        val (logger, variables) = result
-                        modifiedStatements += variables
-                        modifiedStatements += statement
-                        modifiedStatements += logger
-                    } else {
-                        modifiedStatements += statement
-                    }
-                } else {
-                    modifiedStatements += statement
-                }
-            }
-
-            body.statements.clear()
-            body.statements.addAll(modifiedStatements)
+            body.addLoggers(outerFunction, loggerFunction, prefixLogName)
             return body
         }
 
+        private fun IrBlockBody.addLoggers(
+            outerFunction: IrFunction,
+            loggerFunction: IrSimpleFunctionSymbol,
+            prefixLogName: String
+        ) {
+            val modifiedStatements = processStatements(statements, outerFunction, loggerFunction, prefixLogName)
+            statements.clear()
+            statements.addAll(modifiedStatements)
+        }
+
+        private fun processStatements(
+            statements: List<IrStatement>,
+            outerFunction: IrFunction,
+            loggerFunction: IrSimpleFunctionSymbol,
+            prefixLogName: String
+        ): MutableList<IrStatement> {
+            val modifiedStatements = mutableListOf<IrStatement>()
+            for (statement in statements) {
+                when (statement) {
+                    is IrBlock -> {
+                        statement.addLoggers(outerFunction, loggerFunction, prefixLogName)
+                        modifiedStatements += statement
+                    }
+
+                    is IrCall -> {
+                        if (!statement.isRecomposeLoggerFunction()) {
+                            addLoggerForFunction(
+                                targetFunction = statement,
+                                outerFunction = outerFunction,
+                                loggerFunction = loggerFunction,
+                                prefixLogName = prefixLogName,
+                                modifiedStatements = modifiedStatements
+                            )
+                        } else {
+                            modifiedStatements += statement
+                        }
+                    }
+
+                    else -> {
+                        modifiedStatements += statement
+                    }
+                }
+            }
+            return modifiedStatements
+        }
+
+        private fun addLoggerForFunction(
+            targetFunction: IrCall,
+            outerFunction: IrFunction,
+            loggerFunction: IrSimpleFunctionSymbol,
+            prefixLogName: String,
+            modifiedStatements: MutableList<IrStatement>
+        ) {
+            val result = createRecomposeLoggerCall(
+                outerFunction,
+                loggerFunction,
+                prefixLogName,
+                targetFunction
+            )
+            if (result != null) {
+                val (logger, variables) = result
+                modifiedStatements += variables
+                modifiedStatements += targetFunction
+                modifiedStatements += logger
+            } else {
+                modifiedStatements += targetFunction
+            }
+        }
+
+        private fun IrBlock.addLoggers(
+            outerFunction: IrFunction,
+            loggerFunction: IrSimpleFunctionSymbol,
+            prefixLogName: String
+        ) {
+            val modifiedStatements = processStatements(statements, outerFunction, loggerFunction, prefixLogName)
+            statements.clear()
+            statements.addAll(modifiedStatements)
+        }
 
         private fun createRecomposeLoggerCall(
             outerFunction: IrFunction,
