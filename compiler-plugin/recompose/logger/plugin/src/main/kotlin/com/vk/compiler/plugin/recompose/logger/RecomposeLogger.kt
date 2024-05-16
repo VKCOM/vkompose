@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.declarations.impl.IrVariableImpl
@@ -147,6 +148,7 @@ internal class RecomposeLogger(
 
             val modifiedStatements = mutableListOf<IrStatement>()
             for (statement in body.statements) {
+                // todo check blocks
                 if (statement is IrCall && !statement.isRecomposeLoggerFunction()) {
                     val result = createRecomposeLoggerCall(
                         outerFunction,
@@ -179,39 +181,16 @@ internal class RecomposeLogger(
             prefixLogName: String,
             call: IrCall
         ): Pair<IrCallImpl, MutableList<IrVariable>>? {
-            val callFunctionOwner = call.symbol.owner
-            val callFunctionName = callFunctionOwner.name
-
             val variables = mutableListOf<IrVariable>()
             if (call.isValidComposableCall()) {
 
                 val arguments = mutableMapOf<String, IrExpression>()
 
                 for (index in 0 until call.valueArgumentsCount) {
-                    val parameter = callFunctionOwner.valueParameters[index]
-                    val expression = call.getValueArgument(index) ?: continue
-                    if ((parameter.isComposeModifier() && !logModifierChanges) || (expression.isFunctionReference() && (!logFunctionChanges))) continue
-                    if (expression.isFunctionReference()) {
-                        val variable = handleFunctionReferenceArgument(
-                            parameter,
-                            expression,
-                            outerFunction,
-                            call,
-                            index,
-                        )
-                        variables += variable
-                        arguments[parameter.name.asString()] = IrGetValueImpl(
-                            expression.startOffset,
-                            expression.endOffset,
-                            expression.type,
-                            variable.symbol,
-                        )
-                    } else {
-                        arguments[parameter.name.asString()] = expression.deepCopySavingMetadata(outerFunction)
-                    }
+                    call.modifyArgument(index, outerFunction, variables, arguments)
                 }
 
-                val logName = "$prefixLogName:${callFunctionName.asString()}"
+                val logName = "$prefixLogName:${call.symbol.owner.name.asString()}"
                 return IrCallImpl(
                     startOffset = UNDEFINED_OFFSET,
                     endOffset = UNDEFINED_OFFSET,
@@ -229,6 +208,51 @@ internal class RecomposeLogger(
 
             }
             return null
+        }
+
+        private fun IrCall.modifyArgument(
+            index: Int,
+            outerFunction: IrFunction,
+            variables: MutableList<IrVariable>,
+            arguments: MutableMap<String, IrExpression>
+        ) {
+            val parameter = symbol.owner.valueParameters[index]
+            val expression = getValueArgument(index) ?: return
+            if ((parameter.isComposeModifier() && !logModifierChanges) || (expression.isFunctionExpression() && (!logFunctionChanges))) return
+            if (expression.isFunctionExpression()) {
+                if (canTrackFunctionArgument(symbol.owner, expression)) {
+                    val variable = handleFunctionReferenceArgument(
+                        parameter,
+                        expression,
+                        outerFunction,
+                        this,
+                        index,
+                    )
+                    variables += variable
+                    arguments[parameter.name.asString()] = IrGetValueImpl(
+                        expression.startOffset,
+                        expression.endOffset,
+                        expression.type,
+                        variable.symbol,
+                    )
+                }
+            } else {
+                arguments[parameter.name.asString()] = expression.deepCopySavingMetadata(outerFunction)
+            }
+        }
+
+        private fun canTrackFunctionArgument(
+            function: IrSimpleFunction,
+            expression: IrExpression
+        ): Boolean {
+            if (!function.isInline) return true
+
+            return when (expression) {
+                is IrFunctionReference -> !expression.symbol.owner.isInline
+                is IrRawFunctionReference -> !expression.symbol.owner.isInline
+                is IrFunctionExpression -> false
+                else -> false
+            }
         }
 
         private fun handleFunctionReferenceArgument(
@@ -334,7 +358,7 @@ internal class RecomposeLogger(
 
         private fun IrType.isComposeModifier(): Boolean = classFqName?.asString() == MODIFIER_FULL
 
-        private fun IrExpression.isFunctionReference(): Boolean =
+        private fun IrExpression.isFunctionExpression(): Boolean =
             this is IrFunctionExpression || this is IrFunctionReference || this is IrRawFunctionReference
     }
 
