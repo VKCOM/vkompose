@@ -273,8 +273,8 @@ internal class RecomposeLogger(
             val expression = getValueArgument(index) ?: return
             if ((parameter.isComposeModifier() && !logModifierChanges) || (expression.isFunctionExpression() && (!logFunctionChanges))) return
             if (expression.isFunctionExpression()) {
-                if (canTrackFunctionArgument(symbol.owner, expression)) {
-                    val variable = handleFunctionReferenceArgument(
+                if (canTrackFunctionArgument(symbol.owner, expression, parameter)) {
+                    val variable = handleFunctionExpressionArgument(
                         parameter,
                         expression,
                         outerFunction,
@@ -296,9 +296,11 @@ internal class RecomposeLogger(
 
         private fun canTrackFunctionArgument(
             function: IrSimpleFunction,
-            expression: IrExpression
+            expression: IrExpression,
+            parameter: IrValueParameter
         ): Boolean {
             if (!function.isInline) return true
+            if (parameter.isNoinline) return true
 
             return when (expression) {
                 is IrFunctionReference -> !expression.symbol.owner.isInline
@@ -308,7 +310,7 @@ internal class RecomposeLogger(
             }
         }
 
-        private fun handleFunctionReferenceArgument(
+        private fun handleFunctionExpressionArgument(
             parameter: IrValueParameter,
             expression: IrExpression,
             outerFunction: IrFunction,
