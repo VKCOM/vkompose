@@ -21,7 +21,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.5.1"
+    id("com.vk.vkompose") version "0.5.2"
 }
 ```
 
@@ -70,13 +70,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.5.1"
-    id("com.vk.recompose-logger") version "0.5.1"
-    id("com.vk.compose-test-tag-applier") version "0.5.1"
-    id("com.vk.compose-test-tag-cleaner") version "0.5.1"
-    id("com.vk.compose-test-tag-drawer") version "0.5.1"
-    id("com.vk.compose-source-information-cleaner") version "0.5.1"
-    id("com.vk.composable-skippability-checker") version "0.5.1"
+    id("com.vk.recompose-highlighter") version "0.5.2"
+    id("com.vk.recompose-logger") version "0.5.2"
+    id("com.vk.compose-test-tag-applier") version "0.5.2"
+    id("com.vk.compose-test-tag-cleaner") version "0.5.2"
+    id("com.vk.compose-test-tag-drawer") version "0.5.2"
+    id("com.vk.compose-source-information-cleaner") version "0.5.2"
+    id("com.vk.composable-skippability-checker") version "0.5.2"
 }
 
 recomposeHighlighter {
@@ -139,7 +139,7 @@ You can download and install it from the jar file for [Iguana](idea-plugin/vkomp
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
 ```kotlin
 dependencies {
-    detektPlugins("com.vk.vkompose:detekt:0.5.1")
+    detektPlugins("com.vk.vkompose:detekt:0.5.2")
 }
 ```
 
