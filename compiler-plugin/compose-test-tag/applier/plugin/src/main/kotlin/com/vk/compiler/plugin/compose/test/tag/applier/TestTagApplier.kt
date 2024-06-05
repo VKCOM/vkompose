@@ -122,7 +122,7 @@ internal class TestTagApplier(
 
         // Column() -> Column(<default-value>.applyTestTag(tag))
         // Column(Modifier) -> Column(Modifier.applyTestTag(tag))
-        // Column(Modifier.fillMaxSize()) -> Column(Modifier.applyTestTag(tag).fillMaxSize())
+        // Column(Modifier.fillMaxSize()) -> Column(Modifier.fillMaxSize().applyTestTag(tag))
 
         // Column(CustomModifier) -> skip
         // Column(modifier) -> skip
@@ -133,11 +133,11 @@ internal class TestTagApplier(
 
         // val tmp_modifier: Modifier = {
         //      val tmp: Modifier.Object = Modifier.Object
-        //      tmp.fillMaxSize() -> Modifier.applyTestTag(tag).then(tmp.fillMaxSize())
+        //      tmp.fillMaxSize() -> tmp.fillMaxSize().then(Modifier.applyTestTag(tag))
         // }
         // Column(tmp_modifier) -> Column(tmp_modifier)
 
-        // val tmp_modifier: Modifier = Modifier.applyTestTag(tag).fillMaxSize()
+        // val tmp_modifier: Modifier = Modifier.fillMaxSize().applyTestTag(tag)
         // Column(temp_modifier) -> Column(tmp_modifier)
 
         return when (argumentExpression) {
@@ -288,8 +288,8 @@ internal class TestTagApplier(
             typeArgumentsCount = 0,
             valueArgumentsCount = 1,
         ).apply {
-            dispatchReceiver = applyTagCall
-            putValueArgument(0, argumentExpression)
+            dispatchReceiver = argumentExpression
+            putValueArgument(0, applyTagCall)
         }
     }
 
@@ -319,8 +319,8 @@ internal class TestTagApplier(
             typeArgumentsCount = 0,
             valueArgumentsCount = 1,
         ).apply {
-            dispatchReceiver = topExpression
-            putValueArgument(0, argumentExpression)
+            dispatchReceiver = argumentExpression
+            putValueArgument(0, topExpression)
         }
     }
 
