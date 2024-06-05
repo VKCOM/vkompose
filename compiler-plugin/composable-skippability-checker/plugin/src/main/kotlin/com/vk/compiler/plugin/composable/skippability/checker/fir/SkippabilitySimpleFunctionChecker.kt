@@ -8,6 +8,7 @@ import com.vk.compiler.plugin.composable.skippability.checker.fir.SkippabilityCh
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.analysis.checkers.MppCheckerKind
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirSimpleFunctionChecker
 import org.jetbrains.kotlin.fir.declarations.FirCallableDeclaration
@@ -21,13 +22,14 @@ import org.jetbrains.kotlin.fir.declarations.utils.isLocal
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.arguments
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
+import org.jetbrains.kotlin.fir.types.UnexpandedTypeCheck
 import org.jetbrains.kotlin.fir.types.classId
 import org.jetbrains.kotlin.fir.types.coneTypeSafe
 import org.jetbrains.kotlin.fir.types.isUnit
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 
-internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker() {
+internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker(MppCheckerKind.Common) {
 
     override fun check(
         declaration: FirSimpleFunction,
@@ -95,6 +97,7 @@ internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker() {
     }
 
 
+    @OptIn(UnexpandedTypeCheck::class)
     private fun FirSimpleFunction.isRestartable(session: FirSession): Boolean = when {
         isLocal -> false
         isInline -> false
