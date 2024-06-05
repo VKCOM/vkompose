@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.toIrConst
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 
 internal class TestTagCleaner(

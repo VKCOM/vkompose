@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isVararg
+import org.jetbrains.kotlin.ir.util.toIrConst
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
