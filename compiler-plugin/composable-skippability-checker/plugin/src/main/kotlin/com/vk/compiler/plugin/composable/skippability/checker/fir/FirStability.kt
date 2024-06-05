@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.fir.declarations.utils.isFinal
 import org.jetbrains.kotlin.fir.declarations.utils.isInner
 import org.jetbrains.kotlin.fir.declarations.utils.isInterface
 import org.jetbrains.kotlin.fir.declarations.utils.visibility
+import org.jetbrains.kotlin.fir.expressions.UnresolvedExpressionTypeAccess
 import org.jetbrains.kotlin.fir.isPrimitiveType
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
@@ -41,6 +42,7 @@ import org.jetbrains.kotlin.fir.types.isNullable
 import org.jetbrains.kotlin.fir.types.isPrimitive
 import org.jetbrains.kotlin.fir.types.isString
 import org.jetbrains.kotlin.fir.types.isUnit
+import org.jetbrains.kotlin.fir.types.resolvedType
 import org.jetbrains.kotlin.fir.types.toRegularClassSymbol
 import org.jetbrains.kotlin.fir.types.typeContext
 import org.jetbrains.kotlin.fir.types.withNullability
@@ -185,9 +187,10 @@ fun FirStability.forEach(callback: (FirStability) -> Unit) {
     }
 }
 
+@OptIn(UnresolvedExpressionTypeAccess::class)
 fun FirRegularClassSymbol.hasStableMarkerAnnotation(session: FirSession): Boolean {
-    return resolvedAnnotationsWithClassIds.map { it.typeRef.coneType }
-        .mapNotNull { it.toRegularClassSymbol(session) }
+    return resolvedAnnotationsWithClassIds.map { it.coneTypeOrNull }
+        .mapNotNull { it?.toRegularClassSymbol(session) }
         .any { it.hasAnnotation(ComposeClassId.StableMarker, session) }
 }
 
@@ -218,6 +221,7 @@ private fun FirRegularClassSymbol.isProtobufType(session: FirSession): Boolean {
 fun firStabilityOf(firTypeRef: FirTypeRef, session: FirSession): FirStability =
     firStabilityOf(firTypeRef, session, emptyMap(), emptySet())
 
+@OptIn(UnresolvedExpressionTypeAccess::class)
 @Suppress("ReturnCount", "NestedBlockDepth") // expected
 private fun firStabilityOf(
     classSymbol: FirRegularClassSymbol,
@@ -275,7 +279,7 @@ private fun firStabilityOf(
             is FirPropertySymbol -> {
                 member.backingFieldSymbol?.let {
                     if (member.isVar && member.delegate == null) return FirStability.Unstable
-                    val delegateType = member.delegate?.typeRef?.coneTypeSafe<ConeKotlinType>()
+                    val delegateType = member.delegate?.coneTypeOrNull
                     stability += firStabilityOf(
                         delegateType ?: it.resolvedReturnType,
                         session,
