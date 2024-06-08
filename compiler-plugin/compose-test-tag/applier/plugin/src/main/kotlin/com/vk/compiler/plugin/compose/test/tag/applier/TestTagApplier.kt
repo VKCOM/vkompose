@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
-import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
@@ -363,9 +362,13 @@ internal class TestTagApplier(
         irCall: IrCall,
         lastFile: IrFile,
         lastFunction: IrFunction,
-    ) = "${lastFile.name}-" +
-            "${lastFunction.name}(${lastFunction.startOffset})-" +
-            "${irCall.symbol.owner.name}(${irCall.startOffset})"
+    ) = buildString {
+        append(lastFile.name)
+        append("-")
+        append("${lastFunction.name}(${lastFunction.startOffset})")
+        append("-")
+        append("${irCall.symbol.owner.name}(${irCall.startOffset})")
+    }
 
     private fun retrieveArgumentExpression(
         param: IrValueParameter,
@@ -387,7 +390,8 @@ internal class TestTagApplier(
         val Composable = FqName( "androidx.compose.runtime.Composable")
         val modifierObjectClassId = ClassId(
             FqName("androidx.compose.ui"),
-            Name.identifier("Modifier.Companion")
+            FqName("Modifier.Companion"),
+            isLocal = false
         )
         val thenFuncCallableId = CallableId(
             ClassId(
