@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
-import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
@@ -431,12 +430,12 @@ internal class TestTagApplier(
              "$FILENAME_PLACEHOLDER-$PARENT_FUNCTION_NAME_PLACEHOLDER($PARENT_FUNCTION_OFFSET_PLACEHOLDER)-$CALLING_FUNCTION_NAME_PLACEHOLDER($CALLING_FUNCTION_OFFSET_PLACEHOLDER)"
 
          private const val MODIFIER = "androidx.compose.ui.Modifier"
-         private val OUTER_FUNCTION_NAME_PLACEHOLDER_REGEX = "%outer_function_name\\[range=(?<range>.+)]\\[delimiter=(?<delimiter>.+)]\\[prefix=(?<prefix>.+)]\\[suffix=(?<suffix>.+)]%".toRegex()
          private const val MODIFIER_COMPANION = "${MODIFIER}.Companion"
-         private val Composable = FqName("androidx.compose.runtime.Composable")
+         private val Composable = FqName( "androidx.compose.runtime.Composable")
          private val modifierObjectClassId = ClassId(
              FqName("androidx.compose.ui"),
-             Name.identifier("Modifier.Companion")
+             FqName("Modifier.Companion"),
+             isLocal = false
          )
          private val thenFuncCallableId = CallableId(
              ClassId(
