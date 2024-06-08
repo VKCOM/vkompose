@@ -5,7 +5,6 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
 const val COMPOSE_PACKAGE = "androidx.compose"
-val COMPOSE_PACKAGE_NAME = Name.identifier("androidx.compose")
 private const val ROOT = "$COMPOSE_PACKAGE.runtime"
 private const val ROOT_INTERNAL = "$ROOT.internal"
 private val ROOT_FQ_NAME = FqName(ROOT)

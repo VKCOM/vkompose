@@ -1,6 +1,6 @@
 package com.vk.compiler.plugin.composable.skippability.checker.ir
 
-import com.vk.compiler.plugin.composable.skippability.checker.COMPOSE_PACKAGE_NAME
+import com.vk.compiler.plugin.composable.skippability.checker.COMPOSE_PACKAGE
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.Composable
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.Composer
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.ExplicitGroupsComposable
@@ -77,7 +77,7 @@ internal class SkippableFunctionsCollector(
             val isUnstable = stability.knownUnstable()
             val isUsed = functionInfo.usedParams[paramIndex]
             val paramType = functionInfo.paramsTypes[paramIndex]
-            val isFromCompose = param.type.classFqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
+            val isFromCompose = param.type.classFqName?.asString()?.startsWith(COMPOSE_PACKAGE) == true
 
             if (!isFromCompose && isUsed && isUnstable && isRequired) {
                 nonSkippableParams += "(name=${param.name.asString()}, type=$paramType, class=${param.type.classFqName?.asString()}, reason=${stability})"
