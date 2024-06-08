@@ -22,9 +22,9 @@ class VkomposePlugin : Plugin<Project> {
         // order matters
         target.apply<RecomposeHighlighterPlugin>()
         target.apply<RecomposeLoggerPlugin>()
+        target.apply<ComposeTestTagDrawerPlugin>()
         target.apply<ComposeTestTagApplierPlugin>()
         target.apply<ComposeTestTagCleanerPlugin>()
-        target.apply<ComposeTestTagDrawerPlugin>()
         target.apply<SourceInformationCleanerPlugin>()
         target.apply<ComposableSkippabilityCheckerPlugin>()
 

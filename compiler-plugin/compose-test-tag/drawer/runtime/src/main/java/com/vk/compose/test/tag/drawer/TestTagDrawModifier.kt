@@ -19,14 +19,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.debugInspectorInfo
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsModifier
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -36,7 +41,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
@@ -48,10 +52,7 @@ fun Modifier.drawTestTag(): Modifier = composed(debugInspectorInfo {
 }) {
     if (!TestTagDrawConfig.isEnabled) return@composed Modifier
 
-    val actual = this@drawTestTag.extractSemanticsModifier()
-
-    val currentTag = actual?.semanticsConfiguration?.getOrNull(SemanticsProperties.TestTag)
-        ?: return@composed Modifier
+    val currentTag = this@drawTestTag.extractTestTag() ?: return@composed Modifier
 
     val text = remember(currentTag) {
         buildAnnotatedString {
@@ -117,14 +118,34 @@ fun Modifier.drawTestTag(): Modifier = composed(debugInspectorInfo {
 }
 
 
+private fun SemanticsConfiguration.getTagSafe(): String? {
+    return getOrNull(SemanticsProperties.TestTag).takeIf { !it.isNullOrEmpty() }
+}
+
 @Stable
-private fun Modifier.extractSemanticsModifier(): SemanticsModifier? =
-    foldIn<SemanticsModifier?>(null) { acc, element ->
-        val semanticsModifier = element as? SemanticsModifier
-        val semanticsConfiguration = semanticsModifier?.semanticsConfiguration
-        val hasTestTag = semanticsConfiguration?.getOrNull(SemanticsProperties.TestTag).isNullOrEmpty().not()
-        semanticsModifier?.takeIf { hasTestTag } ?: acc
+private fun Modifier.extractTestTag(): String? {
+    return foldIn<String?>(null) { acc, element ->
+        if (element is SemanticsModifier) {
+            element.semanticsConfiguration.getTagSafe() ?: acc
+        } else if (element is ModifierNodeElement<*>) {
+            val node = element.create()
+            if (node is SemanticsModifierNode) {
+                val semanticsConfiguration = SemanticsConfiguration()
+                with(node) {
+                    with(semanticsConfiguration) {
+                        applySemantics()
+                    }
+                }
+                semanticsConfiguration.getTagSafe() ?: acc
+            } else {
+                null
+            }
+
+        } else {
+            acc
+        }
     }
+}
 
 // copy past from Dropdown. i do not want to add dependency of material for this
 @Immutable
