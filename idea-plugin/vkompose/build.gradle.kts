@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "com.vk.idea.plugin.vkompose"
-version = "0.2.4-${currentVersion.versionName}"
+version = "0.2.5-${currentVersion.versionName}"
 
 repositories {
     mavenCentral()
@@ -31,6 +31,10 @@ tasks {
     }
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+
+    jar.configure {
+        destinationDirectory.set(rootDir)
     }
 
     patchPluginXml {
@@ -55,6 +59,7 @@ tasks {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
 }
+
 
 dependencyLocking {
     lockAllConfigurations()

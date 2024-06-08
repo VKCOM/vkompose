@@ -17,6 +17,7 @@ import javax.swing.Icon
 import org.jetbrains.kotlin.builtins.isFunctionType
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.idea.base.projectStructure.ExternalCompilerVersionProvider
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToCall
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
@@ -76,19 +77,26 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
     private fun createTag(
         call: KtCallExpression,
         declaration: KtNamedFunction,
-    ): String = buildString {
-        append(call.containingKtFile.name)
-        append("-")
-        call.getParentOfExpression().let { parent ->
-            append(parent?.name)
+    ): String {
+        val isKotlin2Using = ExternalCompilerVersionProvider.findLatest(call.project)?.kotlinVersion?.isAtLeast(2, 0) == true
+        return buildString {
+            append(call.containingKtFile.name)
+            append("-")
+            call.getParentOfExpression().let { parent ->
+                append(parent?.name)
+                append("(")
+                if (isKotlin2Using) {
+                    append(parent?.startOffset)
+                } else {
+                    append(parent?.startOffsetToFunKeyword())
+                }
+                append(")-")
+            }
+            append(declaration.name)
             append("(")
-            append(parent?.startOffsetToFunKeyword())
-            append(")-")
+            append(call.startOffset)
+            append(")")
         }
-        append(declaration.name)
-        append("(")
-        append(call.startOffset)
-        append(")")
     }
 
     private fun KtCallExpression.getParentOfExpression(): KtNamedFunction? {
