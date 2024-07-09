@@ -261,6 +261,8 @@ class StabilityInferencer(
                 mask = externalTypeMatcherCollection
                     .maskForName(declaration.fqNameWhenAvailable) ?: 0
                 stability = Stability.Stable
+            } else if (declaration.isInterface && declaration.isInCurrentModule()) {
+                return Stability.Unknown(declaration)
             } else {
                 val bitmask = declaration.stabilityParamBitmask() ?: return Stability.Unstable("type ${declaration.fqNameWhenAvailable?.shortName()} doesn't have @StabilityInferred")
 
