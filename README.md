@@ -155,5 +155,4 @@ vkompose:
 ```
 
 ### Known issues
-- Idea plugin does not allow to disable checking stability of some classes
 - Idea plugin cannot draw a test tag marker for functions from other libraries if they have a default Modifier value and Modifier is not explicitly passes as an argument. For more see [KTIJ-27688](https://youtrack.jetbrains.com/issue/KTIJ-27688/Quick-documentation-shows-COMPILEDCODE-instead-of-the-real-default-value-for-compiled-code-with-sources)
