@@ -11,41 +11,49 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.rows
 import com.intellij.ui.dsl.builder.selected
-import com.intellij.ui.dsl.builder.toNonNullableProperty
 
 internal class ComposeConfigurable : BoundSearchableConfigurable("VKompose", "preferences.vkompose") {
 
-    private val settings = ComposeSettingStateComponent.getInstance()
+    private val settings by ComposeSettingStateComponent.getInstance()
 
-    override fun createPanel(): DialogPanel =
-        panel {
-            lateinit var skippabilityChecks: Cell<JBCheckBox>
-            row {
-                skippabilityChecks = checkBox("Check parameters stability of composable functions")
-                    .bindSelected(settings::isFunctionSkippabilityCheckingEnabled)
-            }
-
-            row {
-                label("Stability configuration path:")
-            }.visibleIf(skippabilityChecks.selected)
-
-            row {
-                textFieldWithBrowseButton(
-                    fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor(),
-                    fileChosen = { newFile -> newFile.path }
-                ).align(AlignX.FILL)
-                    .bindText(settings::stabilityConfigurationPath.toNonNullableProperty(""))
-            }.visibleIf(skippabilityChecks.selected)
-
-            row {
-                label("Additional ignored classes:")
-            }.visibleIf(skippabilityChecks.selected)
-
-            row {
-                textArea()
-                    .rows(5)
-                    .align(AlignX.FILL)
-                    .bindText(settings::stabilityChecksIgnoringClasses.toNonNullableProperty(""))
-            }.visibleIf(skippabilityChecks.selected)
+    override fun createPanel(): DialogPanel = panel {
+        lateinit var skippabilityChecks: Cell<JBCheckBox>
+        row {
+            skippabilityChecks = checkBox("Check parameters stability of composable functions")
+                .bindSelected(settings::isFunctionSkippabilityCheckingEnabled)
         }
+
+        row {
+            visibleIf(skippabilityChecks.selected)
+            label("Stability configuration path:")
+        }
+
+        row {
+            visibleIf(skippabilityChecks.selected)
+            textFieldWithBrowseButton(
+                fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor(),
+                fileChosen = { newFile -> newFile.path }
+            ).align(AlignX.FILL)
+                .bindText(
+                    getter = { settings.stabilityConfigurationPath.orEmpty() },
+                    setter = { settings.stabilityConfigurationPath = it },
+                )
+        }
+
+        row {
+            visibleIf(skippabilityChecks.selected)
+            label("Additional ignored classes:")
+        }
+
+        row {
+            visibleIf(skippabilityChecks.selected)
+            textArea()
+                .rows(5)
+                .align(AlignX.FILL)
+                .bindText(
+                    getter = { settings.stabilityChecksIgnoringClasses.orEmpty() },
+                    setter = { settings.stabilityChecksIgnoringClasses = it },
+                )
+        }
+    }
 }

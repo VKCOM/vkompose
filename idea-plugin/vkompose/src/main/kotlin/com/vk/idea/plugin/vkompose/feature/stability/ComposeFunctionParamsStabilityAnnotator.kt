@@ -33,7 +33,7 @@ import org.jetbrains.kotlin.types.typeUtil.isUnit
 
 class ComposeFunctionParamsStabilityAnnotator : Annotator {
 
-    private val settings = ComposeSettingStateComponent.getInstance()
+    private val settings by ComposeSettingStateComponent.getInstance()
     private var ignoredClasses: List<Regex> = settings.stabilityChecksIgnoringClasses
         ?.split("\n")
         ?.map { it.trim().toRegex() }
