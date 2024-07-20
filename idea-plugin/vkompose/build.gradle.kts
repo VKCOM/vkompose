@@ -3,6 +3,7 @@ enum class Version(val ideaVersion: String, val versionName: String, val sinceBu
     Iguana("2023.2", "Iguana", "232"),
     Jellyfish("2023.3", "Jellyfish", "232"),
     Koala("2024.1", "Koala", "241"),
+    Ladybug("2024.1", "Ladybug", "241"),
 }
 
 val currentVersion = Version.Koala
@@ -13,7 +14,7 @@ plugins {
 }
 
 group = "com.vk.idea.plugin.vkompose"
-version = "0.2.5-${currentVersion.versionName}"
+version = "0.2.6-${currentVersion.versionName}"
 
 repositories {
     mavenCentral()
