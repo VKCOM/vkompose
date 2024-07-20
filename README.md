@@ -8,8 +8,8 @@ The repository contains utilities for Jetpack Compose, including Kotlin compiler
 
 | Plugin Version | Kotlin version  |
 |----------------|-----------------|
-| 0.5.4          | 1.8.10 - 1.9.23 | 
-| 0.5.4-k2       | 2.0.0           |
+| 0.5.5          | 1.8.10 - 1.9.23 | 
+| 0.5.5-k2       | 2.0.0           |
 
 Currently, the following compiler plugins are available:
 - Functions skippability checker: Determines [function skippability](https://github.com/androidx/androidx/blob/androidx-main/compose/compiler/design/compiler-metrics.md#functions-that-are-restartable-but-not-skippable) based on checking function parameters stability.
@@ -24,7 +24,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.5.4"
+    id("com.vk.vkompose") version "0.5.5"
 }
 ```
 
@@ -73,13 +73,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.5.4"
-    id("com.vk.recompose-logger") version "0.5.4"
-    id("com.vk.compose-test-tag-applier") version "0.5.4"
-    id("com.vk.compose-test-tag-cleaner") version "0.5.4"
-    id("com.vk.compose-test-tag-drawer") version "0.5.4"
-    id("com.vk.compose-source-information-cleaner") version "0.5.4"
-    id("com.vk.composable-skippability-checker") version "0.5.4"
+    id("com.vk.recompose-highlighter") version "0.5.5"
+    id("com.vk.recompose-logger") version "0.5.5"
+    id("com.vk.compose-test-tag-applier") version "0.5.5"
+    id("com.vk.compose-test-tag-cleaner") version "0.5.5"
+    id("com.vk.compose-test-tag-drawer") version "0.5.5"
+    id("com.vk.compose-source-information-cleaner") version "0.5.5"
+    id("com.vk.composable-skippability-checker") version "0.5.5"
 }
 
 recomposeHighlighter {
@@ -128,10 +128,10 @@ And check logs with tag "RecomposeLogger". This already looks like the [Rebugger
 ### IDEA Plugin
 The IDEA plugin currently offers two features:
 - Error for unskippable functions and unstable parameters
-![vkcompose-idea-plugin-skippability-error.gif](art/vkcompose-idea-plugin-skippability-error.gif)
+  ![vkcompose-idea-plugin-skippability-error.gif](art/vkcompose-idea-plugin-skippability-error.gif)
 
 - Marker for generated test tag values
-![vkcompose-idea-plugin-test-tag-marker.png](art/vkcompose-idea-plugin-test-tag-marker.png)
+  ![vkcompose-idea-plugin-test-tag-marker.png](art/vkcompose-idea-plugin-test-tag-marker.png)
 
 Both features can be disabled in preferences:
 ![vkompose-idea-plugin-stability-preferences.png](art/vkompose-idea-plugin-stability-preferences.png)
@@ -142,7 +142,7 @@ You can download and install it from the jar file for [Iguana](idea-plugin/vkomp
 There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
 ```kotlin
 dependencies {
-    detektPlugins("com.vk.vkompose:detekt:0.5.4")
+    detektPlugins("com.vk.vkompose:detekt:0.5.5")
 }
 ```
 
