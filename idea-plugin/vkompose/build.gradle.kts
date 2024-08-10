@@ -3,14 +3,14 @@ enum class Version(val ideaVersion: String, val versionName: String, val sinceBu
     Iguana("2023.2", "Iguana", "232"),
     Jellyfish("2023.3", "Jellyfish", "232"),
     Koala("2024.1", "Koala", "241"),
-    Ladybug("2024.1", "Ladybug", "241"),
+    Ladybug("2024.2", "Ladybug", "242"),
 }
 
-val currentVersion = Version.Koala
+val currentVersion = Version.Ladybug
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.8.22"
-    id("org.jetbrains.intellij") version "1.15.0"
+    id("org.jetbrains.intellij.platform") version "2.0.1"
 }
 
 group = "com.vk.idea.plugin.vkompose"
@@ -18,49 +18,49 @@ version = "0.2.6-${currentVersion.versionName}"
 
 repositories {
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
-intellij {
-    version.set(currentVersion.ideaVersion)
-    plugins.set(listOf("org.jetbrains.kotlin"))
+kotlin {
+    jvmToolchain(17)
 }
 
-tasks {
-    withType<JavaCompile> {
-        sourceCompatibility = JavaVersion.VERSION_17.toString()
-        targetCompatibility = JavaVersion.VERSION_17.toString()
-    }
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
+intellijPlatform {
+    publishing {
+        token.set(System.getenv("PUBLISH_TOKEN"))
     }
 
-    jar.configure {
-        destinationDirectory.set(rootDir)
-    }
-
-    patchPluginXml {
-        sinceBuild.set(currentVersion.sinceBuild)
-        currentVersion.untilBuild?.let(untilBuild::set)
-    }
-
-    signPlugin {
+    signing {
         certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
         privateKey.set(System.getenv("PRIVATE_KEY"))
         password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
     }
 
-    runIde {
-        val idePath = project.properties["studio.path"]?.toString().orEmpty()
-        if (idePath.isNotEmpty()) {
-            ideDir.set(file(idePath))
-        }
+    pluginConfiguration.ideaVersion {
+        sinceBuild.set(currentVersion.sinceBuild)
+        currentVersion.untilBuild?.let(untilBuild::set)
     }
 
-    publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
+}
+
+dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity(currentVersion.ideaVersion)
+        bundledPlugin("org.jetbrains.kotlin")
+
+        val idePath = project.properties["studio.path"]?.toString().orEmpty()
+        if (idePath.isNotEmpty()) {
+            local(idePath)
+        }
+        instrumentationTools()
     }
 }
 
+tasks.composedJar.configure {
+    destinationDirectory.set(rootDir)
+}
 
 dependencyLocking {
     lockAllConfigurations()
