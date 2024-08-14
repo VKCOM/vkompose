@@ -5,6 +5,7 @@ import com.vk.rules.compose.utils.hasAnnotation
 import com.vk.rules.compose.utils.resolveDescriptor
 import com.vk.rules.compose.utils.resolveToDescriptorIfAny
 import com.vk.rules.compose.utils.resolveType
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtClass
@@ -15,7 +16,7 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.types.typeUtil.isUnit
 
-class FunctionSkippabilityChecker {
+class FunctionSkippabilityChecker(private val isStrongSkippingEnabled: Boolean) {
 
     private val stabilityInferencer = StabilityInferencer()
 
@@ -27,16 +28,15 @@ class FunctionSkippabilityChecker {
 
         if (!function.hasAnnotation(ComposeClassString.Composable)
             || !function.isRestartable(bindingContext)
-            || function.hasAnnotation(ComposeClassString.NonSkippableComposable)
-        ) {
+            || function.hasAnnotation(ComposeClassString.NonSkippableComposable)) {
             return SkippabilityResult.None
         }
 
         val functionDescriptor = function.resolveToDescriptorIfAny(bindingContext)
         functionDescriptor?.module?.let(stabilityInferencer::setFunctionModule)
         stabilityInferencer.setBindingContext(bindingContext)
-        val nonSkippableParams = mutableMapOf<KtParameter, KtStability>()
-        val nonSkippableContextReceivers = mutableMapOf<KtContextReceiver, KtStability>()
+        val problemParams = mutableMapOf<KtParameter, KtStability>()
+        val problemContextReceivers = mutableMapOf<KtContextReceiver, KtStability>()
 
 
         val extensionReceiverType = functionDescriptor?.extensionReceiverParameter?.type
@@ -62,7 +62,7 @@ class FunctionSkippabilityChecker {
             val isIgnored = fqName.shouldBeIgnored(ignoredClasses)
 
             if (!isIgnored && !isFromCompose && isUnstable) {
-                nonSkippableContextReceivers += receiver to stability
+                problemContextReceivers += receiver to stability
             }
         }
 
@@ -77,21 +77,21 @@ class FunctionSkippabilityChecker {
             val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
             val isIgnored = fqName.shouldBeIgnored(ignoredClasses)
 
-            if (!isIgnored && !isFromCompose && isUnstable && isRequired) {
-                nonSkippableParams += valueParameter to stability
+            if (!isIgnored && !isFromCompose && isUnstable && (isRequired || isStrongSkippingEnabled)) {
+                problemParams += valueParameter to stability
             }
         }
 
-        val isUnstable = nonSkippableParams.isNotEmpty()
-                || nonSkippableContextReceivers.isNotEmpty()
+        val isUnstable = problemParams.isNotEmpty()
+                || problemContextReceivers.isNotEmpty()
                 || extensionReceiverStability != null
                 || dispatchReceiverStability != null
 
 
         if (isUnstable) {
             return SkippabilityResult.Unstable(
-                nonSkippableParams,
-                nonSkippableContextReceivers,
+                problemParams,
+                problemContextReceivers,
                 extensionReceiverStability,
                 dispatchReceiverStability
             )

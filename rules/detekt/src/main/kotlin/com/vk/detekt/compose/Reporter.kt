@@ -1,52 +1,31 @@
 package com.vk.detekt.compose
 
-import com.vk.rules.compose.FunctionSkippabilityChecker
 import com.vk.rules.compose.SkippabilityResult
 import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.Debt
 import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Issue
 import io.gitlab.arturbosch.detekt.api.Rule
-import io.gitlab.arturbosch.detekt.api.Severity
-import io.gitlab.arturbosch.detekt.api.config
-import io.gitlab.arturbosch.detekt.api.internal.RequiresTypeResolution
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
-@RequiresTypeResolution
-class NonSkippableComposableRule(config: Config) : Rule(config) {
-
-    private val checker = FunctionSkippabilityChecker()
-    private val ignoredClasses: List<Regex> by config(emptyList<String>()) {
-        it.map(String::toRegex)
-    }
-
-    override val issue = Issue(
-        "NonSkippableComposable",
-        Severity.Performance,
-        "Fix parameters of restartable @Composable function to make it skippable",
-        Debt.FIVE_MINS
-    )
-
-    override fun visitNamedFunction(function: KtNamedFunction) {
-        super.visitNamedFunction(function)
-        val result = checker.analyze(function, bindingContext, ignoredClasses)
-
-        if (result !is SkippabilityResult.Unstable) return
-
+internal object Reporter {
+    fun reportSkippabilitySmells(
+        rule: Rule,
+        message: String,
+        function: KtNamedFunction,
+        result: SkippabilityResult.Unstable
+    ) {
         val smells = buildList {
             add(
                 CodeSmell(
-                    issue,
+                    rule.issue,
                     Entity.from(function),
-                    "Non skippable composable function"
+                    message
                 )
             )
 
             addAll(
-                result.unstableParams.map { (param, stability) ->
+                result.problemParams.map { (param, stability) ->
                     CodeSmell(
-                        issue,
+                        rule.issue,
                         Entity.from(param),
                         "Parameter: $stability"
                     )
@@ -54,9 +33,9 @@ class NonSkippableComposableRule(config: Config) : Rule(config) {
             )
 
             addAll(
-                result.unstableContextReceiver.map { (receiver, stability) ->
+                result.problemContextReceiver.map { (receiver, stability) ->
                     CodeSmell(
-                        issue,
+                        rule.issue,
                         Entity.from(receiver),
                         "Context receiver: $stability"
                     )
@@ -66,7 +45,7 @@ class NonSkippableComposableRule(config: Config) : Rule(config) {
             val dispatchReceiverStability = result.dispatchReceiverStability
             if (dispatchReceiverStability != null) {
                 CodeSmell(
-                    issue,
+                    rule.issue,
                     Entity.from(
                         function.nameIdentifier?.originalElement ?: function.originalElement
                     ),
@@ -77,7 +56,7 @@ class NonSkippableComposableRule(config: Config) : Rule(config) {
             val extensionReceiverStability = result.extensionReceiverStability
             if (extensionReceiverStability != null) {
                 CodeSmell(
-                    issue,
+                    rule.issue,
                     Entity.from(
                         function.receiverTypeReference?.originalElement ?: function.originalElement
                     ),
@@ -86,6 +65,6 @@ class NonSkippableComposableRule(config: Config) : Rule(config) {
             }
         }
 
-        report(smells)
+        rule.report(smells)
     }
 }

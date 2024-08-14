@@ -2,3 +2,7 @@ vkompose:
   NonSkippableComposable:
     active: true
     ignoredClasses: []
+# when strong skipping is enabled
+  ParamsComparedByRef:
+    active: false
+    ignoredClasses: [ ]

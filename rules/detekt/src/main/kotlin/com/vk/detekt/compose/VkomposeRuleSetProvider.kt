@@ -9,6 +9,9 @@ class VkomposeRuleSetProvider : RuleSetProvider {
 
     override fun instance(config: Config): RuleSet = RuleSet(
         ruleSetId,
-        listOf(NonSkippableComposableRule(config)),
+        listOf(
+            NonSkippableComposable(config),
+            ParamsComparedByRef(config)
+        ),
     )
 }

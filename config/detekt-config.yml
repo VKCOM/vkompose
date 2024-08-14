@@ -1,4 +1,9 @@
 vkompose:
   NonSkippableComposable:
+    active: false
+    ignoredClasses: [ 'kotlin.*' ]
+
+# when strong skipping is enabled
+  ParamsComparedByRef:
     active: true
     ignoredClasses: [ 'kotlin.*' ]
