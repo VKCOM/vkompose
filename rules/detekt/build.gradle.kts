@@ -1,9 +1,9 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    kotlin("jvm")
     id("convention.publish")
 }
 
 dependencies {
     implementation(libs.detekt.core)
-    implementation(project(":rules:common"))
+    implementation(project(":common"))
 }

@@ -8,7 +8,6 @@ pluginManagement {
         mavenLocal()
     }
 }
-
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -22,6 +21,8 @@ rootProject.name = "Compilers"
 //include(":sandbox")
 //include(":sandbox:app")
 //include(":sandbox:module")
+
+includeBuild("./rules")
 
 include(":compiler-plugin")
 
@@ -49,9 +50,3 @@ include(":compiler-plugin:recompose:highlighter:runtime")
 include(":compiler-plugin:recompose:logger")
 include(":compiler-plugin:recompose:logger:plugin")
 include(":compiler-plugin:recompose:logger:runtime")
-
-
-include(":rules")
-include(":rules:common")
-include(":rules:detekt")
-//include(":rules:ktlint")
