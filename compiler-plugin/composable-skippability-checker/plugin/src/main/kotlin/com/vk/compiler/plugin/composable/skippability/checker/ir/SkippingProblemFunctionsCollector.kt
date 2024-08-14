@@ -7,6 +7,7 @@ import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.E
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.NonRestartableComposable
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.NonSkippableComposable
 import com.vk.compiler.plugin.composable.skippability.checker.Keys.NON_SKIPPABLE_COMPOSABLE
+import com.vk.compiler.plugin.composable.skippability.checker.Keys.PARAMS_COMPARED_BY_REF
 import com.vk.compiler.plugin.composable.skippability.checker.Keys.SUPPRESS
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.ir.IrElement
@@ -32,8 +33,9 @@ import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.name.SpecialNames
 
-internal class SkippableFunctionsCollector(
-    private val unskippableFunctions: MutableSet<ReportFunction>,
+internal class SkippingProblemFunctionsCollector(
+    private val isStrongSkippingModeEnabled: Boolean,
+    private val problemFunctions: MutableSet<ReportFunction>,
     private val fixedSuppressedFunctions: MutableSet<ReportFunction>,
     private val stabilityInferencer: StabilityInferencer
 ) : IrElementVisitorVoid {
@@ -69,7 +71,7 @@ internal class SkippableFunctionsCollector(
         if (functionInfo == null || functionInfo.mayBeSkippable().not()) return
 
         val function = functionInfo.function
-        val nonSkippableParams = mutableSetOf<String>()
+        val problemParams = mutableSetOf<String>()
 
         functionInfo.params.forEachIndexed { paramIndex, param ->
             val isRequired = functionInfo.paramsSetCount[paramIndex] < 1
@@ -79,20 +81,23 @@ internal class SkippableFunctionsCollector(
             val paramType = functionInfo.paramsTypes[paramIndex]
             val isFromCompose = param.type.classFqName?.asString()?.startsWith(COMPOSE_PACKAGE) == true
 
-            if (!isFromCompose && isUsed && isUnstable && isRequired) {
-                nonSkippableParams += "(name=${param.name.asString()}, type=$paramType, class=${param.type.classFqName?.asString()}, reason=${stability})"
+            if (!isFromCompose && isUsed && isUnstable && (isRequired || isStrongSkippingModeEnabled)) {
+                problemParams += "(name=${param.name.asString()}, type=$paramType, class=${param.type.classFqName?.asString()}, reason=${stability})"
             }
         }
 
-        val suppressAnnotation = function.annotations.any { annotation ->
-            val argumentsRange = 0 until annotation.valueArgumentsCount
-            annotation.symbol.owner.parentAsClass.name.asString().contains(SUPPRESS)
-                    && argumentsRange.any { annotation.getValueArgument(it)?.dumpKotlinLike().orEmpty().contains(NON_SKIPPABLE_COMPOSABLE) }
-        }
+        val suppressAnnotations = function.annotations
+            .filter { it.symbol.owner.parentAsClass.name.asString().contains(SUPPRESS) }
+            .map { annotation ->
+                SUPPRESS_NAMES.filter { suppressName ->
+                    (0 until annotation.valueArgumentsCount).any { annotation.getValueArgument(it)?.dumpKotlinLike().orEmpty().contains(suppressName) }
+                }
+            }.flatten().toSet()
 
+        val suppressed = suppressAnnotations.any { it in SUPPRESS_NAMES } // backward compatibility
         when {
-            !suppressAnnotation && nonSkippableParams.isNotEmpty() -> unskippableFunctions += ReportFunction(function.kotlinFqName.asString(), nonSkippableParams)
-            suppressAnnotation && nonSkippableParams.isEmpty() -> fixedSuppressedFunctions += ReportFunction(function.kotlinFqName.asString())
+            !suppressed && problemParams.isNotEmpty() -> problemFunctions += ReportFunction(function.kotlinFqName.asString(), problemParams)
+            suppressed && problemParams.isEmpty() -> fixedSuppressedFunctions += ReportFunction(function.kotlinFqName.asString())
         }
 
     }
@@ -217,6 +222,10 @@ internal class SkippableFunctionsCollector(
             Context,
             Parameter
         }
+    }
+
+    private companion object {
+        val SUPPRESS_NAMES = setOf(PARAMS_COMPARED_BY_REF, NON_SKIPPABLE_COMPOSABLE)
     }
 
 }

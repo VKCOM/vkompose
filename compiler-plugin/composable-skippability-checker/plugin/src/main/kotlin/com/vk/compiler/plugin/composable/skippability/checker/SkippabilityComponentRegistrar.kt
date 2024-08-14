@@ -19,6 +19,8 @@ class SkippabilityComponentRegistrar : ComponentRegistrar {
 
             val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
 
+            val isStrongSkippingModeEnabled = configuration.get(SkippabilityCommandLineProcessor.STRONG_SKIPPING_MODE_ENABLED, false)
+            val isStrongSkippingFailFastEnabled = configuration.get(SkippabilityCommandLineProcessor.STRONG_SKIPPING_MODE_FAIL_FAST_ENABLED, false)
             val stabilityConfigPath = configuration.get(SkippabilityCommandLineProcessor.STABILITY_CONFIG_PATH_KEY, "")
             val stableTypeMatchers = try {
                 StabilityConfigParser.fromFile(stabilityConfigPath).stableTypeMatchers
@@ -28,7 +30,7 @@ class SkippabilityComponentRegistrar : ComponentRegistrar {
             }
 
             project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(SkippabilityChecker(messageCollector, stableTypeMatchers), LoadingOrder.LAST)
+                .registerExtension(SkippabilityChecker(isStrongSkippingModeEnabled, isStrongSkippingFailFastEnabled, messageCollector, stableTypeMatchers), LoadingOrder.LAST)
 
 //            FirExtensionRegistrarAdapter.registerExtension(project, SkippabilityCheckerFirExtensionRegistrar())
         }

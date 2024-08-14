@@ -19,6 +19,20 @@ sealed class Setting {
     internal abstract fun setup(project: Project)
 }
 
+class StrongSkippingSetting : Setting() {
+    override var isEnabled: Boolean = true
+
+    @JvmField
+    var strongSkippingFailFastEnabled = false
+
+    override fun setup(project: Project) {
+        project.extensions.getByType<ComposableSkippabilityCheckerExtension>().apply {
+            strongSkippingEnabled = this@StrongSkippingSetting.isEnabled
+            strongSkippingFailFastEnabled = this@StrongSkippingSetting.strongSkippingFailFastEnabled
+        }
+    }
+}
+
 class RecomposeLoggerSetting : Setting() {
     override var isEnabled: Boolean = true
 
@@ -85,13 +99,26 @@ class SourceInfoCleanSetting : Setting() {
 class SkippabilityChecksSetting : Setting() {
     override var isEnabled: Boolean = true
 
+    private val strongSkippingSetting = StrongSkippingSetting()
+
     @JvmField
     var stabilityConfigurationPath: String? = null
+
+    @JvmField
+    var strongSkippingEnabled = false
 
     override fun setup(project: Project) {
         project.extensions.getByType<ComposableSkippabilityCheckerExtension>().apply {
             stabilityConfigurationPath = this@SkippabilityChecksSetting.stabilityConfigurationPath
             isEnabled = this@SkippabilityChecksSetting.isEnabled
         }
+        if (strongSkippingEnabled) {
+            strongSkippingSetting.setup(project)
+        }
+    }
+
+    fun Project.strongSkipping(configure: StrongSkippingSetting.() -> Unit) {
+        strongSkippingSetting.apply(configure)
+        strongSkippingSetting.setup(this)
     }
 }

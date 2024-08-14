@@ -46,6 +46,18 @@ class ComposableSkippabilityCheckerPlugin : KotlinCompilerPluginSupportPlugin {
                         )
                     )
                 }
+                add(
+                    SubpluginOption(
+                        "strongSkippingFailFastEnabled",
+                        extension.strongSkippingFailFastEnabled.toString()
+                    )
+                )
+                add(
+                    SubpluginOption(
+                        "strongSkippingEnabled",
+                        extension.strongSkippingEnabled.toString()
+                    )
+                )
             }
         }
     }
