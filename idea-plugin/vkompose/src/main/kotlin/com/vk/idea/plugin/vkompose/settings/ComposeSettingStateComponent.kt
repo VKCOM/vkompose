@@ -18,6 +18,8 @@ internal class ComposeSettingStateComponent :
 
     class State : BaseState() {
         var isFunctionSkippabilityCheckingEnabled by property(true)
+        var isStrongSkippingEnabled by property(false)
+        var isStrongSkippingFailFastEnabled by property(false)
         var stabilityChecksIgnoringClasses by string("")
         var stabilityConfigurationPath by string("")
     }

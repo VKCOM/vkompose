@@ -25,6 +25,15 @@ internal class ComposeConfigurable : BoundSearchableConfigurable("VKompose", "pr
 
         row {
             visibleIf(skippabilityChecks.selected)
+            val strongSkipping = checkBox("Strong skipping mode")
+                .bindSelected(settings::isStrongSkippingEnabled)
+            checkBox("Report strong skipping problems as error")
+                .bindSelected(settings::isStrongSkippingFailFastEnabled)
+                .enabledIf(strongSkipping.selected)
+        }
+
+        row {
+            visibleIf(skippabilityChecks.selected)
             label("Stability configuration path:")
         }
 
