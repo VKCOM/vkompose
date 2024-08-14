@@ -24,5 +24,6 @@ function checkStatus() {
 ./gradlew :compiler-plugin:recompose:highlighter:runtime:publishAllPublicationsToPublicRemoteRepository || checkStatus
 ./gradlew :compiler-plugin:recompose:logger:plugin:publishAllPublicationsToPublicRemoteRepository || checkStatus
 ./gradlew :compiler-plugin:recompose:logger:runtime:publishAllPublicationsToPublicRemoteRepository || checkStatus
-./gradlew :rules:common:publishAllPublicationsToPublicRemoteRepository || checkStatus
-./gradlew :rules:detekt:publishAllPublicationsToPublicRemoteRepository || checkStatus
+
+# ./gradlew :rules:common:publishAllPublicationsToPublicRemoteRepository || checkStatus
+# ./gradlew :rules:detekt:publishAllPublicationsToPublicRemoteRepository || checkStatus
