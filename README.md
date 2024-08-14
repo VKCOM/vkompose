@@ -31,32 +31,44 @@ plugins {
 2. Enable and configure your desired features. For example:
 ```kotlin
 vkompose {
-    skippabilityCheck = true
+  skippabilityCheck = true
+  // or
+  skippabilityCheck {
+    // For more see
+    // https://android-review.googlesource.com/c/platform/frameworks/support/+/2668595
+    // https://issuetracker.google.com/issues/309765121 
+    stabilityConfigurationPath = "/path/file.config"
+
+    // since 0.6 if strong skipping feature of Compose Compiler is enabled
+    strongSkippingEnabled = true
     // or
-    skippabilityCheck {
-        // For more see
-        // https://android-review.googlesource.com/c/platform/frameworks/support/+/2668595
-        // https://issuetracker.google.com/issues/309765121
-        stabilityConfigurationPath = "/path/file.config"
+    strongSkipping {
+      // Fail compilation if there is any problem with strong skipping mode
+      strongSkippingFailFastEnabled = false // false by default
     }
+  }
 
-    recompose {
-        isHighlighterEnabled = true
-        isLoggerEnabled = true
-        // or
-        logger {
-            logModifierChanges = true // true by default since 0.5
-            logFunctionChanges = true // true by default since 0.5. log when function arguments (like lambdas or function references) of composable function are changed
-        }
+  recompose {
+    isHighlighterEnabled = true
+    isLoggerEnabled = true
+    // or
+    logger {
+      // true by default since 0.5
+      // log modifier arguments changes
+      logModifierChanges = true
+      // true by default since 0.5
+      // log when function arguments (like lambdas or function references) of composable function are changed
+      logFunctionChanges = true
     }
+  }
 
-    testTag {
-        isApplierEnabled = true
-        isDrawerEnabled = false
-        isCleanerEnabled = false
-    }
+  testTag {
+    isApplierEnabled = true
+    isDrawerEnabled = false
+    isCleanerEnabled = false
+  }
 
-    sourceInformationClean = true
+  sourceInformationClean = true
 }
 ```
 3. Enable some plugins in your application code
@@ -127,8 +139,10 @@ And check logs with tag "RecomposeLogger". This already looks like the [Rebugger
 
 ### IDEA Plugin
 The IDEA plugin currently offers two features:
-- Error for unskippable functions and unstable parameters
-  ![vkcompose-idea-plugin-skippability-error.gif](art/vkcompose-idea-plugin-skippability-error.gif)
+- Skippability checks
+  - Show a error for a unskippable function with unstable parameters
+  - Show a warning or error for a function in which parameters are compared by reference (if strong skipping is enabled)
+    ![vkcompose-idea-plugin-skippability-error.gif](art/vkcompose-idea-plugin-skippability-error.gif)
 
 - Marker for generated test tag values
   ![vkcompose-idea-plugin-test-tag-marker.png](art/vkcompose-idea-plugin-test-tag-marker.png)
@@ -152,7 +166,18 @@ vkompose:
   NonSkippableComposable:
     active: true
     ignoredClasses: [ 'kotlin.*', 'my.clazz.Data' ]
+
+# since 0.6
+# It's usually the same thing as NonSkippableComposable, but the name is more correct for strong skip mode
+  ParamsComparedByRef:
+    active: true
+    ignoredClasses: [ 'kotlin.*', 'my.clazz.Data' ]
 ```
+
+### Notes
+#### Strong skipping problems suppression since 0.6
+In the compiler plugin, detector rules and plugin functions, ideas can be suppressed by either of the suppressions: NonSkippableComposable or ParamsComparedByRef.
+The NonSkippableComposable suppression will be removed in the future. For now, if strong skip is enabled, the idea plugin will mark NonSkippableComposable as unused and you can easily switch to ParamsComparedByRef
 
 ### Known issues
 - Idea plugin cannot draw a test tag marker for functions from other libraries if they have a default Modifier value and Modifier is not explicitly passes as an argument. For more see [KTIJ-27688](https://youtrack.jetbrains.com/issue/KTIJ-27688/Quick-documentation-shows-COMPILEDCODE-instead-of-the-real-default-value-for-compiled-code-with-sources)

@@ -35,7 +35,7 @@ class NonSkippableComposable(config: Config) : Rule(config) {
 
         if (result !is SkippabilityResult.Unstable) return
         // backward compatibility
-        if (function.isSuppressedBy("NonSkippableComposable", emptySet())) return
+        if (function.isSuppressedBy("ParamsComparedByRef", emptySet())) return
 
         Reporter.reportSkippabilitySmells(this, "Non skippable composable function", function, result)
     }
