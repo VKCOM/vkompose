@@ -13,7 +13,7 @@ class TestTagApplierComponentRegistrar : ComponentRegistrar {
     override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
         if (configuration.get(TestTagApplierCommandLineProcessor.ENABLED, true)) {
             project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(TestTagApplierIrGeneration(), LoadingOrder.FIRST)
+                .registerExtension(TestTagApplierIrGeneration(), LoadingOrder.FIRST, project)
         }
     }
 

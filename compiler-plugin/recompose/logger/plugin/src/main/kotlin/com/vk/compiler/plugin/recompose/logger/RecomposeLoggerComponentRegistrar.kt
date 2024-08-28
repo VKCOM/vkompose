@@ -15,7 +15,7 @@ class RecomposeLoggerComponentRegistrar : ComponentRegistrar {
             val logModifierChanges = configuration.get(RecomposeLoggerCommandLineProcessor.LOG_MODIFIER_CHANGES, true)
             val logFunctionChanges = configuration.get(RecomposeLoggerCommandLineProcessor.LOG_FUNCTION_CHANGES, true)
             project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(RecomposeLoggerIrGeneration(logModifierChanges, logFunctionChanges), LoadingOrder.FIRST)
+                .registerExtension(RecomposeLoggerIrGeneration(logModifierChanges, logFunctionChanges), LoadingOrder.FIRST, project)
         }
     }
 
