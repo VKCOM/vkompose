@@ -13,7 +13,7 @@ class SourceInformationComponentRegistrar : ComponentRegistrar {
     override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
         if (configuration.get(SourceInformationCommandLineProcessor.ENABLED, true)) {
             project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(SourceInformationIrGeneration(), LoadingOrder.LAST)
+                .registerExtension(SourceInformationIrGeneration(), LoadingOrder.LAST, project)
         }
     }
 

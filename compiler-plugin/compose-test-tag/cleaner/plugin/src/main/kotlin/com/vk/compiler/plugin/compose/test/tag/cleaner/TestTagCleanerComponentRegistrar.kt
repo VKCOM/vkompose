@@ -13,7 +13,7 @@ class TestTagCleanerComponentRegistrar : ComponentRegistrar {
     override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
         if (configuration.get(TestTagCleanerCommandLineProcessor.ENABLED, true)) {
             project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(TestTagCleanerIrGeneration(), LoadingOrder.FIRST)
+                .registerExtension(TestTagCleanerIrGeneration(), LoadingOrder.FIRST, project)
         }
     }
 
