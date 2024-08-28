@@ -1,4 +1,4 @@
-name: Publish
+name: Publish Plugins
 
 on:
   release:
@@ -22,13 +22,13 @@ jobs:
       - name: Grant Permission to Execute Gradle
         run: chmod +x gradlew
       - name: Grant Permission to scripts
-        run: chmod +x ./scripts/publish_all_remote.sh
+        run: chmod +x ./scripts/publish_plugins_remote.sh
 
       - name: Release build
         run: ./gradlew build
 
       - name: Publish to MavenCentral
-        run: ./scripts/publish_all_remote.sh
+        run: ./scripts/publish_plugins_remote.sh
         env:
           REMOTE_REPO_PUBLIC_URL: ${{ secrets.ARTIFACTORY_PUBLIC_URL }}
           REMOTE_REPO_PUBLIC_USER: ${{ secrets.ARTIFACTORY_PUBLIC_USER }}

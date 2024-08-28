@@ -153,7 +153,10 @@ Both features can be disabled in preferences:
 You can download and install it from the jar file for [Iguana](idea-plugin/vkompose/vkompose-0.2.6-Iguana.jar), [Jellyfish](idea-plugin/vkompose/vkompose-0.2.6-Jellyfish.jar), [Koala](idea-plugin/vkompose/vkompose-0.2.6-Koala.jar) or [Ladybug](idea-plugin/vkompose/vkompose-0.2.6-Ladybug.jar) versions of AS.
 
 ### [Detekt](https://github.com/detekt/detekt) Rule
-There is one rule available that checks the skippability of functions. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
+
+Current version is `0.6`.
+
+There is one rule available that checks the skippability of functions or stability of parameters. To use it, apply the dependency via the detektPlugin configuration in the dependencies block.
 ```kotlin
 dependencies {
     detektPlugins("com.vk.vkompose:detekt:0.6")
