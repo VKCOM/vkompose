@@ -8,8 +8,8 @@ The repository contains utilities for Jetpack Compose, including Kotlin compiler
 
 | Plugin Version | Kotlin version  |
 |----------------|-----------------|
-| 0.6          | 1.8.10 - 1.9.23 | 
-| 0.6-k2       | 2.0.0           |
+| 0.6.1          | 1.8.10 - 1.9.23 | 
+| 0.6.1-k2       | 2.0             |
 
 Currently, the following compiler plugins are available:
 - Functions skippability checker: Determines [function skippability](https://github.com/androidx/androidx/blob/androidx-main/compose/compiler/design/compiler-metrics.md#functions-that-are-restartable-but-not-skippable) based on checking function parameters stability.
@@ -24,7 +24,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.6"
+    id("com.vk.vkompose") version "0.6.1"
 }
 ```
 
@@ -39,7 +39,7 @@ vkompose {
     // https://issuetracker.google.com/issues/309765121 
     stabilityConfigurationPath = "/path/file.config"
 
-    // since 0.6 if strong skipping feature of Compose Compiler is enabled
+    // since 0.6.1 if strong skipping feature of Compose Compiler is enabled
     strongSkippingEnabled = true
     // or
     strongSkipping {
@@ -85,13 +85,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.6"
-    id("com.vk.recompose-logger") version "0.6"
-    id("com.vk.compose-test-tag-applier") version "0.6"
-    id("com.vk.compose-test-tag-cleaner") version "0.6"
-    id("com.vk.compose-test-tag-drawer") version "0.6"
-    id("com.vk.compose-source-information-cleaner") version "0.6"
-    id("com.vk.composable-skippability-checker") version "0.6"
+    id("com.vk.recompose-highlighter") version "0.6.1"
+    id("com.vk.recompose-logger") version "0.6.1"
+    id("com.vk.compose-test-tag-applier") version "0.6.1"
+    id("com.vk.compose-test-tag-cleaner") version "0.6.1"
+    id("com.vk.compose-test-tag-drawer") version "0.6.1"
+    id("com.vk.compose-source-information-cleaner") version "0.6.1"
+    id("com.vk.composable-skippability-checker") version "0.6.1"
 }
 
 recomposeHighlighter {
