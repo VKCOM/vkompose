@@ -30,7 +30,14 @@ class SkippabilityComponentRegistrar : ComponentRegistrar {
             }
 
             project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(SkippabilityChecker(isStrongSkippingModeEnabled, isStrongSkippingFailFastEnabled, messageCollector, stableTypeMatchers), LoadingOrder.LAST)
+                .registerExtension(
+                    SkippabilityChecker(
+                        isStrongSkippingModeEnabled,
+                        isStrongSkippingFailFastEnabled,
+                        messageCollector,
+                        stableTypeMatchers
+                    ), LoadingOrder.LAST, project
+                )
 
 //            FirExtensionRegistrarAdapter.registerExtension(project, SkippabilityCheckerFirExtensionRegistrar())
         }
