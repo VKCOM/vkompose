@@ -13,7 +13,7 @@ class RecomposeHighlighterComponentRegistrar : ComponentRegistrar {
     override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
         if (configuration.get(RecomposeHighlighterCommandLineProcessor.ENABLED, true)) {
             project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(RecomposeHighlighterIrGeneration(), LoadingOrder.FIRST)
+                .registerExtension(RecomposeHighlighterIrGeneration(), LoadingOrder.FIRST, project)
         }
     }
 
