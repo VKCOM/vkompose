@@ -105,10 +105,6 @@ recomposeLogger {
     logFunctionChanges = true // true by default since 0.5
 }
 
-composeTestTagApplier {
-    isEnabled = false // true by default
-}
-
 composeTestTagCleaner {
     isEnabled = false // true by default
 }
@@ -125,9 +121,28 @@ composableSkippabilityChecker {
     isEnabled = false // true by default
     stabilityConfigurationPath = "/path/file.config"
 }
+
+composeTestTagApplier {
+  isEnabled = false // true by default
+  tagTemplate = "" // how to generate test tag. by default "%filename%-%parent_function_name%(%parent_function_offset%)-%calling_function_name%(%calling_function_offset%)"
+}
 ```
 
-Also if you enable recompose logger, you can add logger manually function that track changes of arguments. For example:
+Use these placeholders to generate tag:
+- %filename%
+- %parent_function_name%
+- %parent_function_offset%
+- %calling_function_name%
+- %calling_function_offset%
+- %outer_function_name\[range=:]\[delimiter="value"]\[prefix="value"]\[suffix="value"]% - all groups are optional
+
+'range' in %outer_function_name% can be set as:
+- range=: or range=1: - include all outer functions. default value
+- range=2: - skip first function 
+- range=-1: - last function
+- range=1:2 - first and second functions
+
+If you enable recompose logger, you can add logger manually function that track changes of arguments. For example:
 ```kotlin
 import com.vk.recompose.logger.RecomposeLogger
 
