@@ -33,7 +33,8 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.popLast
 
 internal class TestTagApplier(
-    private val pluginContext: IrPluginContext
+    private val pluginContext: IrPluginContext,
+    private val tagTemplate: String
 ) : IrElementTransformerVoid() {
 
     private val transformedCalls = mutableSetOf<IrCall>()
@@ -52,6 +53,7 @@ internal class TestTagApplier(
 
     private val functionsStack = mutableListOf<IrFunction>()
     private val filesStack = mutableListOf<IrFile>()
+    private val callFunctionsStack = mutableListOf<String>()
 
     override fun visitFile(declaration: IrFile): IrFile {
         filesStack += declaration
@@ -67,8 +69,12 @@ internal class TestTagApplier(
         return result
     }
 
-    override fun visitCall(expression: IrCall): IrExpression =
-        super.visitCall(expression.applyTestTagToModifier())
+    override fun visitCall(expression: IrCall): IrExpression {
+        callFunctionsStack += expression.symbol.owner.name.asString()
+        val call = super.visitCall(expression.applyTestTagToModifier())
+        callFunctionsStack.popLast()
+        return call
+    }
 
 
     private fun IrCall.applyTestTagToModifier(): IrCall {
@@ -78,7 +84,8 @@ internal class TestTagApplier(
 
         if (applyTagFunction == null || lastFile == null || lastFunction == null) return this
 
-        if (!symbol.owner.isComposable() || this in transformedCalls) return this
+        val isComposable = symbol.owner.isComposable()
+        if (!isComposable || this in transformedCalls) return this
 
         transformedCalls += this
 
@@ -362,43 +369,85 @@ internal class TestTagApplier(
         irCall: IrCall,
         lastFile: IrFile,
         lastFunction: IrFunction,
-    ) = "${lastFile.name}-" +
-            "${lastFunction.name}(${lastFunction.startOffset})-" +
-            "${irCall.symbol.owner.name}(${irCall.startOffset})"
+    ): String {
+        return tagTemplate
+            .replace(FILENAME_PLACEHOLDER, lastFile.name.removeSuffix(".kt"))
+            .replace(PARENT_FUNCTION_NAME_PLACEHOLDER, lastFunction.name.asString())
+            .replace(PARENT_FUNCTION_OFFSET_PLACEHOLDER, lastFunction.startOffset.toString())
+            .replace(CALLING_FUNCTION_NAME_PLACEHOLDER, irCall.symbol.owner.name.asString())
+            .replace(CALLING_FUNCTION_OFFSET_PLACEHOLDER, irCall.startOffset.toString())
+            .replace(OUTER_FUNCTION_NAME_PLACEHOLDER_REGEX) { matchResult ->
+
+                val outerFunctions = callFunctionsStack.subList(0, callFunctionsStack.lastIndex.coerceAtLeast(0))
+
+                if (outerFunctions.isEmpty()) return@replace ""
+
+                val groups = matchResult.groups
+                val range = groups["range"]?.value ?: ":"
+                val delimiter = groups["delimiter"]?.value?.removeSurrounding("\"").orEmpty()
+                val prefix = groups["prefix"]?.value?.removeSurrounding("\"").orEmpty()
+                val suffix = groups["suffix"]?.value?.removeSurrounding("\"").orEmpty()
+
+                val namesToInclude = if (range == ":") {
+                    outerFunctions
+                } else if (!range.contains(":")) {
+                    return@replace ""
+                } else {
+                    var start = range.takeWhile { it != RANGE_DELIMITER }.takeIf { it.isNotBlank() }?.toInt() ?: 1
+                    var end = range.takeLastWhile { it != RANGE_DELIMITER }.takeIf { it.isNotBlank() }?.toInt() ?: outerFunctions.size
+
+                    start = if (start < 0) outerFunctions.size + start else start - 1
+                    end = if (end < 0) outerFunctions.size + end + 1 else end
+
+                    outerFunctions.subList(start.coerceIn(0, outerFunctions.lastIndex), end.coerceIn(0, outerFunctions.size))
+                }
+
+                namesToInclude.joinToString(separator = delimiter, prefix = prefix, postfix = suffix)
+            }
+    }
 
     private fun retrieveArgumentExpression(
         param: IrValueParameter,
         value: IrExpression?
-    ): IrExpression? =
-        when {
-            value == null -> param.defaultValue?.expression?.takeIf { it.isValidValueExpression() }
-            value.isValidValueExpression() -> value
-            else -> null
-        }
-
-    private fun IrExpression.isValidValueExpression(): Boolean {
-        return this is IrCall || this is IrGetObjectValue || this is IrGetValue
+    ): IrExpression? = when {
+        value == null -> param.defaultValue?.expression?.takeIf { it.isValidValueExpression() }
+        value.isValidValueExpression() -> value
+        else -> null
     }
 
-    private companion object {
-        const val MODIFIER = "androidx.compose.ui.Modifier"
-        const val MODIFIER_COMPANION = "${MODIFIER}.Companion"
-        val Composable = FqName( "androidx.compose.runtime.Composable")
-        val modifierObjectClassId = ClassId(
-            FqName("androidx.compose.ui"),
-            Name.identifier("Modifier.Companion")
-        )
-        val thenFuncCallableId = CallableId(
-            ClassId(
-                FqName("androidx.compose.ui"),
-                Name.identifier("Modifier")
-            ),
-            Name.identifier("then")
-        )
-        val testTagRegex = "applyTestTag|testTag".toRegex()
-        val applyTagCallableId = CallableId(
-                FqName("com.vk.compose.test.tag.applier"),
-                Name.identifier("applyTestTag")
-            )
+    private fun IrExpression.isValidValueExpression(): Boolean =
+        this is IrCall || this is IrGetObjectValue || this is IrGetValue
+
+     companion object {
+         private const val RANGE_DELIMITER = ':'
+         const val FILENAME_PLACEHOLDER = "%filename%"
+         const val PARENT_FUNCTION_NAME_PLACEHOLDER = "%parent_function_name%"
+         const val PARENT_FUNCTION_OFFSET_PLACEHOLDER = "%parent_function_offset%"
+         const val OUTER_FUNCTION_NAME_PLACEHOLDER_SAMPLE = "%outer_function_name[range=${RANGE_DELIMITER}][delimiter=\"value\"][prefix=\"value\"][suffix=\"value\"]%"
+         const val CALLING_FUNCTION_NAME_PLACEHOLDER = "%calling_function_name%"
+         const val CALLING_FUNCTION_OFFSET_PLACEHOLDER = "%calling_function_offset%"
+         const val DEFAULT_TAG_TEMPLATE =
+             "$FILENAME_PLACEHOLDER-$PARENT_FUNCTION_NAME_PLACEHOLDER($PARENT_FUNCTION_OFFSET_PLACEHOLDER)-$CALLING_FUNCTION_NAME_PLACEHOLDER($CALLING_FUNCTION_OFFSET_PLACEHOLDER)"
+
+         private const val MODIFIER = "androidx.compose.ui.Modifier"
+         private val OUTER_FUNCTION_NAME_PLACEHOLDER_REGEX = "%outer_function_name\\[range=(?<range>.+)]\\[delimiter=(?<delimiter>.+)]\\[prefix=(?<prefix>.+)]\\[suffix=(?<suffix>.+)]%".toRegex()
+         private const val MODIFIER_COMPANION = "${MODIFIER}.Companion"
+         private val Composable = FqName("androidx.compose.runtime.Composable")
+         private val modifierObjectClassId = ClassId(
+             FqName("androidx.compose.ui"),
+             Name.identifier("Modifier.Companion")
+         )
+         private val thenFuncCallableId = CallableId(
+             ClassId(
+                 FqName("androidx.compose.ui"),
+                 Name.identifier("Modifier")
+             ),
+             Name.identifier("then")
+         )
+         private val testTagRegex = "applyTestTag|testTag".toRegex()
+         private val applyTagCallableId = CallableId(
+             FqName("com.vk.compose.test.tag.applier"),
+             Name.identifier("applyTestTag")
+         )
     }
 }

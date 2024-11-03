@@ -80,7 +80,7 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
     ): String {
         val isKotlin2Using = ExternalCompilerVersionProvider.findLatest(call.project)?.kotlinVersion?.isAtLeast(2, 0) == true
         return buildString {
-            append(call.containingKtFile.name)
+            append(call.containingKtFile.name.removeSuffix(".kt"))
             append("-")
             call.getParentOfExpression().let { parent ->
                 append(parent?.name)

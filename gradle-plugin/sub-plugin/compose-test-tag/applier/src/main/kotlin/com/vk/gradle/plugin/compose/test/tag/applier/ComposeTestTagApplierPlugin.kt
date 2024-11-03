@@ -22,7 +22,8 @@ class ComposeTestTagApplierPlugin : KotlinCompilerPluginSupportPlugin {
         val project = kotlinCompilation.target.project
 
         return project.provider {
-            listOf(SubpluginOption("enabled", project.isPluginEnabled().toString()))
+            listOf(SubpluginOption("enabled", project.getExtension().isEnabled.toString()))
+            listOf(SubpluginOption("tagTemplate", project.getExtension().tagTemplate))
         }
     }
 
@@ -36,7 +37,7 @@ class ComposeTestTagApplierPlugin : KotlinCompilerPluginSupportPlugin {
 
 
     private fun Project.applyRuntimeDependency() = afterEvaluate {
-        if (isPluginEnabled()) {
+        if (getExtension().isEnabled) {
             dependencies {
                 add(
                     "implementation",
@@ -47,10 +48,9 @@ class ComposeTestTagApplierPlugin : KotlinCompilerPluginSupportPlugin {
 
     }
 
-    private fun Project.isPluginEnabled(): Boolean {
-        val extension = project.extensions.findByType(ComposeTestTagApplierExtension::class.java)
+    private fun Project.getExtension(): ComposeTestTagApplierExtension {
+        return project.extensions.findByType(ComposeTestTagApplierExtension::class.java)
             ?: project.extensions.create(EXTENSION_NAME, ComposeTestTagApplierExtension::class.java)
-        return extension.isEnabled
     }
 
     companion object {

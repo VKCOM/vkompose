@@ -8,9 +8,9 @@ The repository contains utilities for Jetpack Compose, including Kotlin compiler
 
 | Plugin Version | Kotlin version  |
 |----------------|-----------------|
-| 0.6.1          | 1.8.10 - 1.9.23 | 
+| 0.6.2          | 1.8.10 - 1.9.23 | 
 | 0.6-k2         | 2.0             |
-| 0.6.1-k2       | 2.0.20          |
+| 0.6.2-k2       | 2.0.20          |
 
 Currently, the following compiler plugins are available:
 - Functions skippability checker: Determines [function skippability](https://github.com/androidx/androidx/blob/androidx-main/compose/compiler/design/compiler-metrics.md#functions-that-are-restartable-but-not-skippable) based on checking function parameters stability.
@@ -25,7 +25,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.6.1"
+    id("com.vk.vkompose") version "0.6.2"
 }
 ```
 
@@ -40,7 +40,7 @@ vkompose {
     // https://issuetracker.google.com/issues/309765121 
     stabilityConfigurationPath = "/path/file.config"
 
-    // since 0.6.1 if strong skipping feature of Compose Compiler is enabled
+    // since 0.6.2 if strong skipping feature of Compose Compiler is enabled
     strongSkippingEnabled = true
     // or
     strongSkipping {
@@ -67,6 +67,12 @@ vkompose {
     isApplierEnabled = true
     isDrawerEnabled = false
     isCleanerEnabled = false
+
+    isApplierEnabled = true
+    // or
+    tagApplier {
+      tagTemplate = "" // how to generate test tag. by default "%filename%-%parent_function_name%(%parent_function_offset%)-%calling_function_name%(%calling_function_offset%)"
+    }
   }
 
   sourceInformationClean = true
@@ -86,13 +92,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.6.1"
-    id("com.vk.recompose-logger") version "0.6.1"
-    id("com.vk.compose-test-tag-applier") version "0.6.1"
-    id("com.vk.compose-test-tag-cleaner") version "0.6.1"
-    id("com.vk.compose-test-tag-drawer") version "0.6.1"
-    id("com.vk.compose-source-information-cleaner") version "0.6.1"
-    id("com.vk.composable-skippability-checker") version "0.6.1"
+    id("com.vk.recompose-highlighter") version "0.6.2"
+    id("com.vk.recompose-logger") version "0.6.2"
+    id("com.vk.compose-test-tag-applier") version "0.6.2"
+    id("com.vk.compose-test-tag-cleaner") version "0.6.2"
+    id("com.vk.compose-test-tag-drawer") version "0.6.2"
+    id("com.vk.compose-source-information-cleaner") version "0.6.2"
+    id("com.vk.composable-skippability-checker") version "0.6.2"
 }
 
 recomposeHighlighter {
@@ -103,10 +109,6 @@ recomposeLogger {
     isEnabled = false // true by default
     logModifierChanges = true // true by default since 0.5
     logFunctionChanges = true // true by default since 0.5
-}
-
-composeTestTagApplier {
-    isEnabled = false // true by default
 }
 
 composeTestTagCleaner {
@@ -125,9 +127,28 @@ composableSkippabilityChecker {
     isEnabled = false // true by default
     stabilityConfigurationPath = "/path/file.config"
 }
+
+composeTestTagApplier {
+  isEnabled = false // true by default
+  tagTemplate = "" // how to generate test tag. by default "%filename%-%parent_function_name%(%parent_function_offset%)-%calling_function_name%(%calling_function_offset%)"
+}
 ```
 
-Also if you enable recompose logger, you can add logger manually function that track changes of arguments. For example:
+Use these placeholders to generate tag:
+- %filename%
+- %parent_function_name%
+- %parent_function_offset%
+- %calling_function_name%
+- %calling_function_offset%
+- %outer_function_name\[range=:]\[delimiter="value"]\[prefix="value"]\[suffix="value"]% - all groups are optional
+
+'range' in %outer_function_name% can be set as:
+- range=: or range=1: - include all outer functions. default value
+- range=2: - skip first function 
+- range=-1: - last function
+- range=1:2 - first and second functions
+
+If you enable recompose logger, you can add logger manually function that track changes of arguments. For example:
 ```kotlin
 import com.vk.recompose.logger.RecomposeLogger
 
@@ -151,7 +172,7 @@ The IDEA plugin currently offers two features:
 Both features can be disabled in preferences:
 ![vkompose-idea-plugin-stability-preferences.png](art/vkompose-idea-plugin-stability-preferences.png)
 ![vkompose-idea-plugin-test-tag-gutter-icon-preference.png](art/vkompose-idea-plugin-test-tag-gutter-icon-preference.png)
-You can download and install it from the jar file for [Iguana](idea-plugin/vkompose/vkompose-0.3-Iguana.jar), [Jellyfish](idea-plugin/vkompose/vkompose-0.3-Jellyfish.jar), [Koala](idea-plugin/vkompose/vkompose-0.3-Koala.jar) or [Ladybug](idea-plugin/vkompose/vkompose-0.3-Ladybug.jar) versions of AS.
+You can download and install it from the jar file for [Iguana](idea-plugin/vkompose/vkompose-0.3-Iguana.jar), [Jellyfish](idea-plugin/vkompose/vkompose-0.3-Jellyfish.jar), [Koala](idea-plugin/vkompose/vkompose-0.3.1-Koala.jar) or [Ladybug](idea-plugin/vkompose/vkompose-0.3.1-Ladybug.jar) versions of AS.
 
 ### [Detekt](https://github.com/detekt/detekt) Rule
 

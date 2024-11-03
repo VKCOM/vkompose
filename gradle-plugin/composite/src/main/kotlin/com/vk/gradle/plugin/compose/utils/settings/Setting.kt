@@ -71,8 +71,24 @@ class RecomposeSetting : Setting() {
     }
 }
 
+class TestTagApplierSetting : Setting() {
+    override var isEnabled: Boolean = true
+
+    @JvmField
+    var tagTemplate = ""
+
+    override fun setup(project: Project) {
+        project.extensions.getByType<ComposeTestTagApplierExtension>().apply {
+            isEnabled = this@TestTagApplierSetting.isEnabled
+            tagTemplate = this@TestTagApplierSetting.tagTemplate
+        }
+    }
+}
+
 class TestTagSetting : Setting() {
     override val isEnabled: Boolean = true
+
+    private var applierSetting = TestTagApplierSetting()
 
     @JvmField
     var isApplierEnabled = false
@@ -82,9 +98,16 @@ class TestTagSetting : Setting() {
     var isDrawerEnabled = false
 
     override fun setup(project: Project) {
-        project.extensions.getByType<ComposeTestTagApplierExtension>().isEnabled = isApplierEnabled
+        if (isApplierEnabled) {
+            applierSetting.setup(project)
+        }
         project.extensions.getByType<ComposeTestTagCleanerExtension>().isEnabled = isCleanerEnabled
         project.extensions.getByType<ComposeTestTagDrawerExtension>().isEnabled = isDrawerEnabled
+    }
+
+    fun Project.tagApplier(configure: TestTagApplierSetting.() -> Unit) {
+        applierSetting.apply(configure)
+        applierSetting.setup(this)
     }
 }
 
