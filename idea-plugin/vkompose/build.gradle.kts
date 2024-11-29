@@ -1,12 +1,14 @@
 enum class Version(val ideaVersion: String, val versionName: String, val sinceBuild: String, val untilBuild: String? = null) {
     Koala("2024.1", "Koala", "241"),
     Ladybug("2024.2", "Ladybug", "242"),
+    Meerkat("2024.3", "Meerkat", "243"),
+
 }
 
-val currentVersion = Version.Ladybug
+val currentVersion = Version.Meerkat
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.8.22"
+    id("org.jetbrains.kotlin.jvm") version "2.1.0"
     id("org.jetbrains.intellij.platform") version "2.0.1"
 }
 
