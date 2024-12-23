@@ -46,75 +46,76 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import kotlin.random.Random
 
-@Stable
-fun Modifier.drawTestTag(): Modifier = composed(debugInspectorInfo {
-    name = "testTagDrawer"
-}) {
-    if (!TestTagDrawConfig.isEnabled) return@composed Modifier
+fun Modifier.drawTestTag(): Modifier {
+    if (!TestTagDrawConfig.isEnabled) return this
 
-    val currentTag = this@drawTestTag.extractTestTag() ?: return@composed Modifier
+    return composed(debugInspectorInfo {
+        name = "testTagDrawer"
+    }) {
+        val currentTag = this@drawTestTag.extractTestTag() ?: return@composed Modifier
 
-    val text = remember(currentTag) {
-        buildAnnotatedString {
-            withStyle(style = SpanStyle(color = Color.Red)) {
-                append("testTag:")
-            }
-            withStyle(style = SpanStyle(color = Color.Green)) {
-                append(currentTag)
+        val text = remember(currentTag) {
+            buildAnnotatedString {
+                withStyle(style = SpanStyle(color = Color.Red)) {
+                    append("testTag:")
+                }
+                withStyle(style = SpanStyle(color = Color.Green)) {
+                    append(currentTag)
+                }
             }
         }
-    }
 
-    val randomStrokeColor = remember { Color(Random.nextInt()) }
-    var showTag by remember { mutableStateOf(false) }
-    val density = LocalDensity.current
-    val borderWidth = 4.dp
-    val borderWidthPx = with(density) { borderWidth.toPx() }
-    val positionProvider =
-        remember(density) { DropdownMenuPositionProvider(DpOffset.Zero, density) }
+        val randomStrokeColor = remember { Color(Random.nextInt()) }
+        var showTag by remember { mutableStateOf(false) }
+        val density = LocalDensity.current
+        val borderWidth = 4.dp
+        val borderWidthPx = with(density) { borderWidth.toPx() }
+        val positionProvider =
+            remember(density) { DropdownMenuPositionProvider(DpOffset.Zero, density) }
 
-    if (showTag) {
-        Popup(
-            popupPositionProvider = positionProvider,
-            onDismissRequest = { showTag = false }
-        ) {
-            BasicText(
-                text = text,
-                modifier = Modifier
-                    .background(Color.Black)
-                    .border(borderWidth, randomStrokeColor)
-            )
+        if (showTag) {
+            Popup(
+                popupPositionProvider = positionProvider,
+                onDismissRequest = { showTag = false }
+            ) {
+                BasicText(
+                    text = text,
+                    modifier = Modifier
+                        .background(Color.Black)
+                        .border(borderWidth, randomStrokeColor)
+                )
+            }
         }
-    }
 
-    Modifier
-        .pointerInput(Unit) {
-            awaitEachGesture {
-                awaitFirstDown()
-                if (!showTag) {
-                    try {
-                        withTimeout(1000) {
-                            waitForUpOrCancellation()
+        Modifier
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown()
+                    if (!showTag) {
+                        try {
+                            withTimeout(1000) {
+                                waitForUpOrCancellation()
+                            }
+                        } catch (e: PointerEventTimeoutCancellationException) {
+                            showTag = !showTag
+                            do {
+                                val event = awaitPointerEvent()
+                                event.changes.fastForEach { it.consume() }
+                            } while (event.changes.fastAny { it.pressed })
                         }
-                    } catch (e: PointerEventTimeoutCancellationException) {
-                        showTag = !showTag
-                        do {
-                            val event = awaitPointerEvent()
-                            event.changes.fastForEach { it.consume() }
-                        } while (event.changes.fastAny { it.pressed })
                     }
                 }
             }
-        }
-        .drawWithCache {
-            onDrawWithContent {
-                drawContent()
-                if (showTag) {
-                    drawRect(randomStrokeColor, style = Stroke(borderWidthPx))
+            .drawWithCache {
+                onDrawWithContent {
+                    drawContent()
+                    if (showTag) {
+                        drawRect(randomStrokeColor, style = Stroke(borderWidthPx))
+                    }
                 }
             }
-        }
 
+    }
 }
 
 

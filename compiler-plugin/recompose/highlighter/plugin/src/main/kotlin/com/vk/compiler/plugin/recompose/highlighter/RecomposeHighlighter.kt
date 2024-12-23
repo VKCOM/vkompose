@@ -26,34 +26,24 @@ internal class RecomposeHighlighter(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoid() {
 
-    private val highlighterModifier by lazy {
-        pluginContext.referenceClass(highlighterModifierClassId)
-    }
-
-    private val thenFunction by lazy {
-        pluginContext.referenceFunctions(thenFuncCallableId).firstOrNull()?.owner?.symbol
+    private val applyHighlighterFunction by lazy {
+        pluginContext.referenceFunctions(applyHighlighterCallableId).firstOrNull()?.owner?.symbol
     }
 
     override fun visitCall(expression: IrCall): IrExpression {
-        val thenFunction = thenFunction
-        val highlighterModifier = highlighterModifier
+        val applyHighlighterFunction = applyHighlighterFunction
 
-        if (thenFunction != null
-            && highlighterModifier != null
+        if (applyHighlighterFunction != null
             && expression.symbol.owner.isComposable()
         ) {
-            expression.transformModifierArguments(
-                highlighterModifier,
-                thenFunction
-            )
+            expression.transformModifierArguments(applyHighlighterFunction)
         }
 
         return super.visitCall(expression)
     }
 
     private fun IrCall.transformModifierArguments(
-        highlighterModifier: IrClassSymbol,
-        thenFunction: IrSimpleFunctionSymbol
+        applyHighlighterFunction: IrSimpleFunctionSymbol
     ) {
         for (index in 0 until valueArgumentsCount) {
             val parameter = symbol.owner.valueParameters[index]
@@ -66,8 +56,7 @@ internal class RecomposeHighlighter(
                 val modifiedArgumentExpression = createHighlightedModifierArgument(
                     parameter,
                     expression,
-                    highlighterModifier,
-                    thenFunction
+                    applyHighlighterFunction,
                 )
                 putValueArgument(index, modifiedArgumentExpression)
             }
@@ -77,27 +66,17 @@ internal class RecomposeHighlighter(
     private fun createHighlightedModifierArgument(
         parameter: IrValueParameter,
         argumentExpression: IrExpression,
-        highlighterModifier: IrClassSymbol,
-        thenFunction: IrSimpleFunctionSymbol
+        applyHighlighterFunction: IrSimpleFunctionSymbol
     ): IrExpression {
-
-        val customModifier = IrGetObjectValueImpl(
-            startOffset = UNDEFINED_OFFSET,
-            endOffset = UNDEFINED_OFFSET,
-            type = parameter.type,
-            symbol = highlighterModifier
-        )
-
         val thenCall = IrCallImpl(
             startOffset = UNDEFINED_OFFSET,
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
-            symbol = thenFunction,
+            symbol = applyHighlighterFunction,
             typeArgumentsCount = 0,
-            valueArgumentsCount = 1,
+            valueArgumentsCount = 0,
         )
-        thenCall.putValueArgument(0, customModifier)
-        thenCall.dispatchReceiver = argumentExpression
+        thenCall.extensionReceiver = argumentExpression
         return thenCall
     }
 
@@ -113,16 +92,7 @@ internal class RecomposeHighlighter(
     private companion object {
         const val MODIFIER_FULL = "androidx.compose.ui.Modifier"
         val Composable = FqName("androidx.compose.runtime.Composable")
-        val thenFuncCallableId = CallableId(
-            ClassId(
-                FqName("androidx.compose.ui"),
-                Name.identifier("Modifier")
-            ),
-            Name.identifier("then")
-        )
-        val highlighterModifierClassId = ClassId(
-            FqName("com.vk.recompose.highlighter"),
-            Name.identifier("HighlighterModifier")
-        )
+        val applyHighlighterCallableId =
+            CallableId(FqName("com.vk.recompose.highlighter"), Name.identifier("applyHighlighter"))
     }
 }
