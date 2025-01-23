@@ -222,8 +222,6 @@ internal class TestTagApplier(
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
             symbol = applyTagFunction,
-            typeArgumentsCount = 0,
-            valueArgumentsCount = 1,
         ).apply {
             extensionReceiver = argumentExpression
             putValueArgument(0, tag.toIrConst(pluginContext.irBuiltIns.stringType))
@@ -280,8 +278,6 @@ internal class TestTagApplier(
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
             symbol = applyTagFunction,
-            typeArgumentsCount = 0,
-            valueArgumentsCount = 1,
         ).apply {
             extensionReceiver = modifierObject
             putValueArgument(0, tag.toIrConst(pluginContext.irBuiltIns.stringType))
@@ -292,8 +288,6 @@ internal class TestTagApplier(
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
             symbol = thenFunction,
-            typeArgumentsCount = 0,
-            valueArgumentsCount = 1,
         ).apply {
             dispatchReceiver = argumentExpression
             putValueArgument(0, applyTagCall)
@@ -323,8 +317,6 @@ internal class TestTagApplier(
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
             symbol = thenFunction,
-            typeArgumentsCount = 0,
-            valueArgumentsCount = 1,
         ).apply {
             dispatchReceiver = argumentExpression
             putValueArgument(0, topExpression)

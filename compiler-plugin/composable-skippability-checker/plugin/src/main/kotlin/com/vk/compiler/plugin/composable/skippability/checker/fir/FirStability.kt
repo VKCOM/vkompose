@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.fir.expressions.UnresolvedExpressionTypeAccess
 import org.jetbrains.kotlin.fir.isPrimitiveType
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
-import org.jetbrains.kotlin.fir.resolve.toFirRegularClassSymbol
+import org.jetbrains.kotlin.fir.resolve.toRegularClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassifierSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirFieldSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
@@ -31,19 +31,15 @@ import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeDynamicType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
-import org.jetbrains.kotlin.fir.types.ConeNullability
 import org.jetbrains.kotlin.fir.types.ConeTypeParameterType
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.FirTypeRef
-import org.jetbrains.kotlin.fir.types.coneType
-import org.jetbrains.kotlin.fir.types.coneTypeSafe
 import org.jetbrains.kotlin.fir.types.isAny
-import org.jetbrains.kotlin.fir.types.isNullable
+import org.jetbrains.kotlin.fir.types.isMarkedNullable
+import org.jetbrains.kotlin.fir.types.isNullableAny
 import org.jetbrains.kotlin.fir.types.isPrimitive
 import org.jetbrains.kotlin.fir.types.isString
 import org.jetbrains.kotlin.fir.types.isUnit
-import org.jetbrains.kotlin.fir.types.resolvedType
-import org.jetbrains.kotlin.fir.types.toRegularClassSymbol
 import org.jetbrains.kotlin.fir.types.typeContext
 import org.jetbrains.kotlin.fir.types.withNullability
 import org.jetbrains.kotlin.name.SpecialNames
@@ -315,7 +311,7 @@ private fun firStabilityOf(
     currentlyAnalyzing: Set<FirClassifierSymbol<*>>
 ): FirStability {
     if (firTypeRef !is FirResolvedTypeRef) return FirStability.Unstable
-    return firStabilityOf(firTypeRef.type, session, substitutions, currentlyAnalyzing)
+    return firStabilityOf(firTypeRef.coneType, session, substitutions, currentlyAnalyzing)
 }
 
 private fun firStabilityOf(
@@ -345,8 +341,8 @@ private fun firStabilityOf(
             }
         }
 
-        expandedType.isNullable -> {
-            val type = expandedType.withNullability(ConeNullability.NOT_NULL, session.typeContext)
+        expandedType.isMarkedNullable -> {
+            val type = expandedType.withNullability(nullable = false, session.typeContext)
             firStabilityOf(
                 coneKotlinType = type,
                 session = session,
@@ -372,7 +368,7 @@ private fun firStabilityOf(
         }
 
         expandedType is ConeClassLikeType -> {
-            val classSymbol = expandedType.lookupTag.toFirRegularClassSymbol(session)
+            val classSymbol = expandedType.lookupTag.toRegularClassSymbol(session)
             if (classSymbol != null) {
                 firStabilityOf(
                     classSymbol,

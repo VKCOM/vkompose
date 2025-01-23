@@ -21,10 +21,9 @@ import org.jetbrains.kotlin.fir.declarations.utils.isInline
 import org.jetbrains.kotlin.fir.declarations.utils.isLocal
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.arguments
-import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.UnexpandedTypeCheck
 import org.jetbrains.kotlin.fir.types.classId
-import org.jetbrains.kotlin.fir.types.coneTypeSafe
+import org.jetbrains.kotlin.fir.types.coneTypeOrNull
 import org.jetbrains.kotlin.fir.types.isUnit
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
@@ -50,7 +49,7 @@ internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker(Mpp
             val isRequired = valueParameter.defaultValue == null
             val isUnstable = firStabilityOf(returnTypeRef, session).knownUnstable()
             val isUsed = true // TODO check declaration.body.statements.source.text
-            val packageFqName = returnTypeRef.coneTypeSafe<ConeKotlinType>()?.classId?.packageFqName
+            val packageFqName = returnTypeRef.coneTypeOrNull?.classId?.packageFqName
             val isFromCompose = packageFqName?.startsWith(composePackage) == true
 
             if (!isFromCompose && isUsed && isUnstable && isRequired) {

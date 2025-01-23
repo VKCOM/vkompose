@@ -70,8 +70,6 @@ internal class TestTagDrawer(
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
             symbol = drawTestTagFunction,
-            typeArgumentsCount = 0,
-            valueArgumentsCount = 0,
         )
 
         drawTestTagCall.extensionReceiver = argumentExpression

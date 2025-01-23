@@ -93,8 +93,6 @@ internal class RecomposeHighlighter(
             endOffset = UNDEFINED_OFFSET,
             type = parameter.type,
             symbol = thenFunction,
-            typeArgumentsCount = 0,
-            valueArgumentsCount = 1,
         )
         thenCall.putValueArgument(0, customModifier)
         thenCall.dispatchReceiver = argumentExpression

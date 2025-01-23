@@ -24,7 +24,6 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
-import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.impl.IrVariableSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrType
@@ -32,7 +31,6 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.isUnit
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.types.typeWith
-import org.jetbrains.kotlin.ir.util.deepCopySavingMetadata
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isVararg
@@ -250,8 +248,6 @@ internal class RecomposeLogger(
                     endOffset = UNDEFINED_OFFSET,
                     type = pluginContext.irBuiltIns.unitType,
                     symbol = loggerFunctionSymbol,
-                    typeArgumentsCount = 0,
-                    valueArgumentsCount = 2,
                 ).apply {
                     putValueArgument(0, logName.toIrConst(pluginContext.irBuiltIns.stringType))
                     putValueArgument(
@@ -359,14 +355,10 @@ internal class RecomposeLogger(
             val argumentsMapType = irBuiltIns.mapClass.typeWith(stringType, nullableAnyType)
 
             return IrCallImpl(
-                UNDEFINED_OFFSET,
-                UNDEFINED_OFFSET,
-                argumentsMapType,
-                mapOfSymbol,
-                typeArgumentsCount = 2,
-                valueArgumentsCount = 1,
-                origin = null,
-                superQualifierSymbol = null
+                startOffset = UNDEFINED_OFFSET,
+                endOffset = UNDEFINED_OFFSET,
+                type = argumentsMapType,
+                symbol = mapOfSymbol,
             ).apply {
                 putTypeArgument(0, stringType)
                 putTypeArgument(1, nullableAnyType)
@@ -383,7 +375,6 @@ internal class RecomposeLogger(
                                 pairConstructorCall,
                                 typeArgumentsCount = 2,
                                 constructorTypeArgumentsCount = 0,
-                                valueArgumentsCount = 2,
                             ).apply {
                                 putTypeArgument(0, stringType)
                                 putTypeArgument(1, nullableAnyType)
