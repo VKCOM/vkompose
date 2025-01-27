@@ -1,7 +1,7 @@
 function checkStatus() {
     if [[ $? != 0 ]]; then
       echo "Publish failed!"
-      exitWithCleanup
+      exit 1
     fi
 }
 
@@ -25,5 +25,5 @@ function checkStatus() {
 ./gradlew :compiler-plugin:recompose:logger:plugin:publishAllPublicationsToPublicRemoteRepository || checkStatus
 ./gradlew :compiler-plugin:recompose:logger:runtime:publishAllPublicationsToPublicRemoteRepository || checkStatus
 
-# ./gradlew :rules:common:publishAllPublicationsToPublicRemoteRepository || checkStatus
-# ./gradlew :rules:detekt:publishAllPublicationsToPublicRemoteRepository || checkStatus
+./gradlew :rules:common:publishAllPublicationsToPublicRemoteRepository || checkStatus
+./gradlew :rules:detekt:publishAllPublicationsToPublicRemoteRepository || checkStatus

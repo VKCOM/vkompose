@@ -1,7 +1,7 @@
 function checkStatus() {
     if [[ $? != 0 ]]; then
       echo "Publish failed!"
-      exitWithCleanup
+      exit 1
     fi
 }
 
