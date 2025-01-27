@@ -11,7 +11,7 @@ The repository contains utilities for Jetpack Compose, including Kotlin compiler
 | 0.6.3          | 1.8.10 - 1.9.23  | 
 | 0.6-k2         | 2.0              |
 | 0.6.2-k2       | 2.0.20           |
-| 0.6.3-k2       | 2.1.0            |
+| 0.6.3.1-k2       | 2.1.0            |
 
 Currently, the following compiler plugins are available:
 - Functions skippability checker: Determines [function skippability](https://github.com/androidx/androidx/blob/androidx-main/compose/compiler/design/compiler-metrics.md#functions-that-are-restartable-but-not-skippable) based on checking function parameters stability.
