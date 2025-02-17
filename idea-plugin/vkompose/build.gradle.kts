@@ -5,7 +5,7 @@ enum class Version(val ideaVersion: String, val versionName: String, val sinceBu
 
 }
 
-val currentVersion = Version.Meerkat
+val currentVersion = Version.Koala
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "2.1.0"

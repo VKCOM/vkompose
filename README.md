@@ -173,7 +173,7 @@ The IDEA plugin currently offers two features:
 Both features can be disabled in preferences:
 ![vkompose-idea-plugin-stability-preferences.png](art/vkompose-idea-plugin-stability-preferences.png)
 ![vkompose-idea-plugin-test-tag-gutter-icon-preference.png](art/vkompose-idea-plugin-test-tag-gutter-icon-preference.png)
-You can download and install it from the jar file for [Koala](idea-plugin/vkompose/vkompose-0.3.1-Koala.jar), [Ladybug](idea-plugin/vkompose/vkompose-0.3.1-Ladybug.jar) or [Meerkat](idea-plugin/vkompose/vkompose-0.3.1-Meerkat.jar) versions of AS.
+You can download and install it from the jar file for [Koala](idea-plugin/vkompose/vkompose-0.4.0-Koala.jar), [Ladybug](idea-plugin/vkompose/vkompose-0.4.0-Ladybug.jar) or [Meerkat](idea-plugin/vkompose/vkompose-0.4.0-Meerkat.jar) versions of AS.
 
 ### [Detekt](https://github.com/detekt/detekt) Rule
 
