@@ -1,43 +1,33 @@
+@file:OptIn(KaExperimentalApi::class)
+
 package com.vk.idea.plugin.vkompose.feature.stability
 
-import com.vk.idea.plugin.vkompose.utils.ComposeClassName
 import com.vk.idea.plugin.vkompose.extensions.resolveDelegateType
-import com.vk.idea.plugin.vkompose.utils.isValueClass
-import com.vk.idea.plugin.vkompose.utils.isValueClassType
-import org.jetbrains.kotlin.builtins.KotlinBuiltIns
-import org.jetbrains.kotlin.builtins.isFunctionType
-import org.jetbrains.kotlin.builtins.isKFunctionType
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.ClassKind
-import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
-import org.jetbrains.kotlin.descriptors.FieldDescriptor
-import org.jetbrains.kotlin.descriptors.ModuleDescriptor
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
-import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
-import org.jetbrains.kotlin.descriptors.isEnumClass
-import org.jetbrains.kotlin.descriptors.isFinalClass
-import org.jetbrains.kotlin.descriptors.isInterface
-import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
+import com.vk.idea.plugin.vkompose.utils.ComposeClassName
+import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
+import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaSymbolModality
+import org.jetbrains.kotlin.analysis.api.symbols.KaSymbolVisibility
+import org.jetbrains.kotlin.analysis.api.symbols.KaTypeAliasSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaTypeParameterSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaVariableSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.typeParameters
+import org.jetbrains.kotlin.analysis.api.types.KaClassType
+import org.jetbrains.kotlin.analysis.api.types.KaDynamicType
+import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
+import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
+import org.jetbrains.kotlin.analysis.api.types.symbol
+import org.jetbrains.kotlin.idea.base.analysis.api.utils.isJavaSourceOrLibrary
+import org.jetbrains.kotlin.idea.debugger.core.isInlineClass
 import org.jetbrains.kotlin.name.SpecialNames
-import org.jetbrains.kotlin.resolve.descriptorUtil.classId
-import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameOrNull
-import org.jetbrains.kotlin.resolve.descriptorUtil.inlineClassRepresentation
-import org.jetbrains.kotlin.resolve.descriptorUtil.module
-import org.jetbrains.kotlin.resolve.isInlineClassType
-import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
-import org.jetbrains.kotlin.types.KotlinType
-import org.jetbrains.kotlin.types.TypeUtils
-import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.isPrimitiveType
-import org.jetbrains.kotlin.types.getAbbreviation
-import org.jetbrains.kotlin.types.isDynamic
-import org.jetbrains.kotlin.types.isNullable
-import org.jetbrains.kotlin.types.typeUtil.isAny
-import org.jetbrains.kotlin.types.typeUtil.isTypeParameter
-import org.jetbrains.kotlin.types.typeUtil.isUnit
-import org.jetbrains.kotlin.types.typeUtil.makeNotNullable
-import org.jetbrains.kotlin.types.typeUtil.supertypes
-import org.jetbrains.kotlin.util.isJavaDescriptor
-import org.jetbrains.kotlinx.serialization.compiler.resolve.toClassDescriptor
+import org.jetbrains.kotlin.psi.KtClass
 
 sealed class KtStability {
     // class Foo(val bar: Int)
@@ -48,30 +38,36 @@ sealed class KtStability {
     }
 
     // class Foo(val bar: ExternalType) -> ExternalType.$stable
-    class Runtime(val classSymbol: ClassDescriptor) : KtStability() {
+    class Runtime(val classSymbol: KaClassSymbol) : KtStability() {
+        private val name = classSymbol.name
+
         override fun toString(): String {
-            return "Runtime(${classSymbol.name.asString()})"
+            return "Runtime(${name?.asString()})"
         }
     }
 
     // interface Foo { fun result(): Int }
-    class Unknown(val declaration: ClassDescriptor) : KtStability() {
+    class Unknown(val declaration: KaClassSymbol) : KtStability() {
+        private val name = declaration.name
+
         override fun toString(): String {
-            return "Uncertain(${declaration.name.asString()})"
+            return "Uncertain(${name?.asString()})"
         }
     }
 
     // class <T> Foo(val value: T)
-    class Parameter(val parameter: TypeParameterDescriptor) : KtStability() {
+    class Parameter(val parameter: KaTypeParameterSymbol) : KtStability() {
+        private val name = parameter.name
+
         override fun toString(): String {
-            return "Parameter(${parameter.name.asString()})"
+            return "Parameter(${name.asString()})"
         }
     }
 
     // class Foo(val foo: A, val bar: B)
     class Combined(val elements: List<KtStability>) : KtStability() {
         override fun toString(): String {
-            return elements.joinToString(",")
+            return elements.joinToString(", ")
         }
     }
 
@@ -146,7 +142,7 @@ fun KtStability.normalize(): KtStability {
             // if combined, we perform the more expensive normalization process
         }
     }
-    val parameters = mutableSetOf<TypeParameterDescriptor>()
+    val parameters = mutableSetOf<KaTypeParameterSymbol>()
     val parts = mutableListOf<KtStability>()
     val stack = mutableListOf<KtStability>(this)
     while (stack.isNotEmpty()) {
@@ -184,29 +180,40 @@ fun KtStability.forEach(callback: (KtStability) -> Unit) {
     }
 }
 
-fun ClassDescriptor.hasStableMarkerAnnotation(): Boolean {
-    return annotations.any { it.type.toClassDescriptor?.annotations?.hasAnnotation(ComposeClassName.StableMarker) == true }
+context(KaSession)
+fun KaClassLikeSymbol.hasStableMarkerAnnotation(): Boolean = (psi as KtClass).annotationEntries.any { annotation ->
+    annotation.typeReference?.type?.symbol?.annotations?.any {
+        it.classId?.asSingleFqName() == ComposeClassName.StableMarker
+    } == true
 }
 
 
-private fun ClassDescriptor.hasStableMarkedDescendant(): Boolean {
+context(KaSession)
+private fun KaNamedClassSymbol.hasStableMarkedDescendant(): Boolean {
     if (hasStableMarkerAnnotation()) return true
-    return defaultType.supertypes().any {
-        !it.isAny() && it.toClassDescriptor?.hasStableMarkedDescendant() == true
+    return superTypes.any {
+        !it.isAnyType && (it.symbol as? KaNamedClassSymbol)?.hasStableMarkedDescendant() == true
     }
 }
 
-private fun ClassDescriptor.isProtobufType(): Boolean {
+context(KaSession)
+private fun KaNamedClassSymbol.isProtobufType(): Boolean {
     // Quick exit as all protos are final
-    if (!isFinalClass) return false
+    if (modality != KaSymbolModality.FINAL) return false
     val directParentClassName =
-        defaultType.supertypes()
-            .mapNotNull { it.toClassDescriptor }
-            .lastOrNull { !it.kind.isInterface }
-            ?.classId?.asFqNameString()
+        superTypes
+            .lastOrNull { !it.isInterface() }
+            ?.symbol?.classId?.asFqNameString()
     return directParentClassName == "com.google.protobuf.GeneratedMessageLite" ||
             directParentClassName == "com.google.protobuf.GeneratedMessage"
 }
+
+fun KaType.isInterface(): Boolean {
+    if (this !is KaClassType) return false
+    val classSymbol = symbol
+    return classSymbol is KaClassSymbol && classSymbol.classKind == KaClassKind.INTERFACE
+}
+
 
 //private fun IrAnnotationContainer.stabilityParamBitmask(): Int? =
 //    (annotations.findAnnotation(StabilityInferred)
@@ -214,8 +221,8 @@ private fun ClassDescriptor.isProtobufType(): Boolean {
 //            )?.value as? Int
 
 private data class SymbolForAnalysis(
-    val symbol: ClassDescriptor,
-    val typeParameters: List<KotlinType?>
+    val symbol: KaClassSymbol,
+    val typeParameters: List<KaClassLikeSymbol?>
 )
 
 class StabilityInferencer(
@@ -224,28 +231,30 @@ class StabilityInferencer(
 
     private val externalTypeMatcherCollection = FqNameMatcherCollection(externalStableTypeMatchers)
 
-    private var currentModule: ModuleDescriptor? = null
+    private var currentModule: KaSourceModule? = null
 
-    fun setFunctionModule(module: ModuleDescriptor) {
+    fun setFunctionModule(module: KaSourceModule) {
         currentModule = module
     }
 
-    fun ktStabilityOf(kotlinType: KotlinType): KtStability =
+    context(KaSession)
+    fun ktStabilityOf(kotlinType: KaType): KtStability =
         ktStabilityOf(kotlinType, emptyMap(), emptySet())
 
+    context(KaSession)
     @Suppress("ReturnCount", "NestedBlockDepth") // expected
     private fun ktStabilityOf(
-        declaration: ClassDescriptor,
-        substitutions: Map<TypeParameterDescriptor, KotlinType>,
+        declaration: KaClassSymbol,
+        substitutions: Map<KaTypeParameterSymbol, KaType?>,
         currentlyAnalyzing: Set<SymbolForAnalysis>
     ): KtStability {
-        val typeArguments = declaration.declaredTypeParameters.map { substitutions[it] }
+        val typeArguments = declaration.typeParameters.map { substitutions[it]?.symbol }
         val fullSymbol = SymbolForAnalysis(declaration, typeArguments)
         if (currentlyAnalyzing.contains(fullSymbol)) return KtStability.Unstable("recursive analyse ${declaration.name}")
-        if (declaration.hasStableMarkedDescendant()) return KtStability.Stable
-        if (declaration.kind.isEnumClass || declaration.kind == ClassKind.ENUM_ENTRY) return KtStability.Stable
-        if (declaration.defaultType.isPrimitiveType()) return KtStability.Stable
-        if (declaration.isProtobufType()) return KtStability.Stable
+        if (declaration is KaNamedClassSymbol && declaration.hasStableMarkedDescendant()) return KtStability.Stable
+        if (declaration is KaNamedClassSymbol && declaration.classKind == KaClassKind.ENUM_CLASS) return KtStability.Stable
+        if (declaration is KaNamedClassSymbol && declaration.defaultType.isPrimitive) return KtStability.Stable
+        if (declaration is KaNamedClassSymbol && declaration.isProtobufType()) return KtStability.Stable
 
 //    if (classSymbol == IrDeclarationOrigin.IR_BUILTINS_STUB) {
 //        error("Builtins Stub: ${declaration.name}")
@@ -254,18 +263,19 @@ class StabilityInferencer(
         val analyzing = currentlyAnalyzing + fullSymbol
 
         val funModule = currentModule
-        val isFromDifferentModule = funModule != null && funModule.name != declaration.module.name
-        if (canInferStability(declaration) || isFromDifferentModule || declaration.isExternalStableType()) {
+        val isFromDifferentModule = funModule != null && funModule.name != (declaration.containingModule as? KaSourceModule)?.name
+        val isExternalStablyType = declaration is KaNamedClassSymbol && declaration.isExternalStableType()
+        if (canInferStability(declaration) || isFromDifferentModule || isExternalStablyType) {
             val fqName = declaration.classId?.asFqNameString()
-            val typeParameters = declaration.declaredTypeParameters
+            val typeParameters = declaration.typeParameters
             val stability: KtStability
             val mask: Int
             if (KnownStableConstructs.stableTypes.contains(fqName)) {
                 mask = KnownStableConstructs.stableTypes[fqName] ?: 0
                 stability = KtStability.Stable
-            } else if (declaration.isExternalStableType()) {
+            } else if (isExternalStablyType) {
                 mask = externalTypeMatcherCollection
-                    .maskForName(declaration.fqNameOrNull()) ?: 0
+                    .maskForName(declaration.classId?.asSingleFqName()) ?: 0
                 stability = KtStability.Stable
             } else {
                 val bitmask = retrieveParameterMask(declaration)
@@ -295,71 +305,77 @@ class StabilityInferencer(
                     }
                 )
             }
-        } else if (declaration.isJavaDescriptor) {
+        } else if (declaration.origin.isJavaSourceOrLibrary()) {
             return KtStability.Unstable("type from Java: ${declaration.name}")
         }
 
-        if (declaration.kind.isInterface) {
+        if (declaration.classKind == KaClassKind.INTERFACE) {
             return KtStability.Unknown(declaration)
         }
 
         var stability = KtStability.Stable
 
-        for (member in declaration.unsubstitutedMemberScope.getDescriptorsFiltered()) {
+        for (member in declaration.memberScope.declarations) {
             when (member) {
-                is PropertyDescriptor -> {
-                    if (!member.kind.isReal) continue  // skip properties from parent
-                    if (member.getter?.isDefault == false && !member.isVar && !member.isDelegated) continue // skip properties with non default getter because they are usually like function
+                is KaPropertySymbol -> {
+                    if (member.isOverride) continue  // skip properties from parent
+                    if (member.getter?.isDefault == false && member.isVal && !member.isDelegatedProperty) continue // skip properties with non default getter because they are usually like function
 
-                    member.backingField?.let {
-                        if (member.isVar && !member.isDelegated) return KtStability.Unstable("type ${declaration.name} contains non-delegated var ${member.name}")
+                    // custom getter and setter without using field
+                    if (!member.isVal && member.getter?.isDefault == false && member.setter?.isDefault == false && member.initializer == null) continue
+                    member.backingFieldSymbol?.let {
+                        if (!member.isVal && !member.isDelegatedProperty) return KtStability.Unstable("type ${declaration.name} contains non-delegated var ${member.name}")
                         stability += ktStabilityOf(
-                            member.resolveDelegateType() ?: member.type,
+                            member.resolveDelegateType() ?: member.returnType,
                             substitutions,
                             analyzing
                         )
                     }
                 }
 
-                is FieldDescriptor -> {
+                is KaVariableSymbol -> {
                     stability += ktStabilityOf(
-                        member.correspondingProperty.type,
+                        member.returnType,
                         substitutions,
                         analyzing
                     )
                 }
+
+                else -> {}
             }
         }
 
         return stability
     }
 
-    private fun ClassDescriptor.isExternalStableType(): Boolean {
-        return externalTypeMatcherCollection.matches(fqNameOrNull(), defaultType.supertypes().toList())
+    context(KaSession)
+    private fun KaNamedClassSymbol.isExternalStableType(): Boolean {
+        return externalTypeMatcherCollection.matches(classId?.asSingleFqName(), superTypes.toList())
     }
 
-    private fun canInferStability(declaration: ClassDescriptor): Boolean {
+    private fun canInferStability(declaration: KaClassSymbol): Boolean {
         val fqName = declaration.classId?.asFqNameString()
-        return KnownStableConstructs.stableTypes.contains(fqName) || KotlinBuiltIns.isBuiltIn(declaration)
+        return KnownStableConstructs.stableTypes.contains(fqName) || fqName?.startsWith("kotlin") == true
     }
 
+    context(KaSession)
     private fun ktStabilityOf(
-        kotlinType: KotlinType,
-        substitutions: Map<TypeParameterDescriptor, KotlinType>,
+        kotlinType: KaType,
+        substitutions: Map<KaTypeParameterSymbol, KaType?>,
         currentlyAnalyzing: Set<SymbolForAnalysis>
     ): KtStability {
         return when {
-            kotlinType.isDynamic() -> KtStability.Unstable("DynamicType")
+            kotlinType is KaDynamicType -> KtStability.Unstable("DynamicType")
 
-            kotlinType.isUnit() ||
-                    KotlinBuiltIns.isPrimitiveType(kotlinType) ||
+            kotlinType.isUnitType ||
+                    kotlinType.isPrimitive ||
                     kotlinType.isFunctionType ||
                     kotlinType.isKFunctionType ||
                     kotlinType.isSyntheticComposableFunction() ||
-                    KotlinBuiltIns.isString(kotlinType) -> KtStability.Stable
+                    kotlinType.isStringType -> KtStability.Stable
 
-            TypeUtils.isNonReifiedTypeParameter(kotlinType) -> {
-                val descriptor = TypeUtils.getTypeParameterDescriptorOrNull(kotlinType)!!
+            kotlinType is KaTypeParameterType && !kotlinType.symbol.isReified -> {
+                val descriptor = kotlinType.symbol
                 val arg = substitutions[descriptor]
                 if (arg != null) {
                     ktStabilityOf(arg, substitutions, currentlyAnalyzing)
@@ -368,20 +384,20 @@ class StabilityInferencer(
                 }
             }
 
-            kotlinType.isNullable() -> {
+            kotlinType.isMarkedNullable -> {
                 ktStabilityOf(
-                    kotlinType = kotlinType.makeNotNullable(),
+                    kotlinType = kotlinType.withNullability(KaTypeNullability.NON_NULLABLE),
                     substitutions = substitutions,
                     currentlyAnalyzing = currentlyAnalyzing
                 )
             }
 
-            kotlinType.isInlineClassType() || kotlinType.isValueClassType() -> {
-                val descriptor = kotlinType.constructor.declarationDescriptor as? ClassDescriptor
-                if (descriptor?.hasStableMarkerAnnotation() == true) {
+            kotlinType.symbol?.isInlineClass() == true -> {
+                val symbol = kotlinType.symbol as? KaNamedClassSymbol
+                if (symbol?.hasStableMarkerAnnotation() == true) {
                     KtStability.Stable
                 } else {
-                    val type = descriptor?.inlineClassRepresentation?.underlyingType as? KotlinType
+                    val type = symbol?.memberScope?.constructors?.firstOrNull { it.isPrimary }?.valueParameters?.firstOrNull()?.returnType
                     if (type != null) {
                         ktStabilityOf(
                             kotlinType = type,
@@ -392,30 +408,29 @@ class StabilityInferencer(
                 }
             }
 
-            kotlinType.constructor.declarationDescriptor is ClassDescriptor -> {
-                val classDescriptor = kotlinType.toClassDescriptor
-                if (classDescriptor != null) {
-                    ktStabilityOf(
-                        classDescriptor,
-                        substitutions + classDescriptor.substitutionMap(kotlinType),
-                        currentlyAnalyzing
-                    )
-                } else KtStability.Unstable("can't resolve class descriptor of $kotlinType")
+            kotlinType is KaClassType -> {
+                val classSymbol =  kotlinType.fullyExpandedType.expandedSymbol as KaClassSymbol
+                val map: Map<KaTypeParameterSymbol, KaType?> = classSymbol.typeParameters
+                    .zip(kotlinType.typeArguments).toMap()
+                    .mapValues { it.value.type }
+                ktStabilityOf(
+                    classSymbol,
+                    substitutions + map,
+                    currentlyAnalyzing
+                )
             }
 
-            kotlinType.isTypeParameter() -> {
+            kotlinType is KaTypeParameterType -> {
                 KtStability.Unstable("contains Generic $kotlinType")
             }
 
-            kotlinType.getAbbreviation() != null -> {
-                val type = kotlinType.getAbbreviation() as? KotlinType
-                if (type != null) {
-                    ktStabilityOf(
-                        type,
-                        substitutions,
-                        currentlyAnalyzing
-                    )
-                } else KtStability.Unstable("can't abbreviation of $kotlinType")
+            kotlinType.symbol is KaTypeAliasSymbol -> {
+                val type = (kotlinType.symbol as KaTypeAliasSymbol).expandedType
+                ktStabilityOf(
+                    type,
+                    substitutions,
+                    currentlyAnalyzing
+                )
             }
 
             else -> error("Unexpected kotlinType: $kotlinType")
@@ -423,31 +438,31 @@ class StabilityInferencer(
     }
 
 
+    context(KaSession)
+    @OptIn(KaExperimentalApi::class)
     @Suppress("NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod") // expected
-    private fun retrieveParameterMask(classDescriptor: ClassDescriptor): Int? {
+    private fun retrieveParameterMask(classSymbol: KaClassSymbol): Int? {
         if (
-            (classDescriptor.visibility != DescriptorVisibilities.PUBLIC && classDescriptor.visibility != DescriptorVisibilities.INTERNAL) ||
-            classDescriptor.kind.isEnumClass ||
-            classDescriptor.kind == ClassKind.ENUM_ENTRY ||
-            classDescriptor.kind.isInterface ||
-            classDescriptor.kind == ClassKind.ANNOTATION_CLASS ||
-            classDescriptor.name == SpecialNames.NO_NAME_PROVIDED ||
-            classDescriptor.isExpect ||
-            classDescriptor.isInner ||
-            classDescriptor.isCompanionObject ||
-            classDescriptor.isInline ||
-            classDescriptor.isValueClass() ||
-            !KotlinBuiltIns.isPrimitiveType(classDescriptor.defaultType) && KotlinBuiltIns.isBuiltIn(classDescriptor)
+            (classSymbol.visibility != KaSymbolVisibility.PUBLIC && classSymbol.visibility != KaSymbolVisibility.INTERNAL) ||
+            classSymbol.classKind == KaClassKind.ENUM_CLASS ||
+            classSymbol.classKind == KaClassKind.INTERFACE ||
+            classSymbol.classKind == KaClassKind.ANNOTATION_CLASS ||
+            classSymbol.name == SpecialNames.NO_NAME_PROVIDED ||
+            classSymbol.isExpect ||
+            classSymbol is KaNamedClassSymbol && classSymbol.isInner ||
+            classSymbol.classKind == KaClassKind.COMPANION_OBJECT ||
+            classSymbol.isInlineClass() ||
+            classSymbol is KaNamedClassSymbol && !classSymbol.defaultType.isPrimitive && classSymbol.classId?.asFqNameString()?.startsWith("kotlin") == true
         ) return null
 
         val savedModule = currentModule
         currentModule = null
-        val stability = ktStabilityOf(classDescriptor, emptyMap(), emptySet()).normalize()
+        val stability = ktStabilityOf(classSymbol, emptyMap(), emptySet()).normalize()
         currentModule = savedModule
 
         var parameterMask = 0
 
-        val typeParameters = classDescriptor.declaredTypeParameters
+        val typeParameters = classSymbol.typeParameters
         if (typeParameters.isNotEmpty()) {
 
             stability.forEach {
@@ -476,12 +491,7 @@ class StabilityInferencer(
         }
         return parameterMask
     }
-
-    private fun ClassDescriptor.substitutionMap(kotlinType: KotlinType): Map<TypeParameterDescriptor, KotlinType> {
-        return declaredTypeParameters.zip(kotlinType.arguments)
-            .associate { (descriptor, projection) -> descriptor to projection.type }
-    }
 }
 
-private fun KotlinType.isSyntheticComposableFunction() =
-    fqName?.asString().orEmpty().startsWith("androidx.compose.runtime.internal.ComposableFunction")
+private fun KaType.isSyntheticComposableFunction() =
+    symbol?.classId?.asString().orEmpty().startsWith("androidx.compose.runtime.internal.ComposableFunction")

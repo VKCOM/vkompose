@@ -14,13 +14,11 @@ import com.vk.idea.plugin.vkompose.utils.isInFileHeader
 import com.vk.idea.plugin.vkompose.utils.safeCast
 import java.awt.datatransfer.StringSelection
 import javax.swing.Icon
-import org.jetbrains.kotlin.builtins.isFunctionType
-import org.jetbrains.kotlin.descriptors.CallableDescriptor
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.base.projectStructure.ExternalCompilerVersionProvider
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
-import org.jetbrains.kotlin.idea.caches.resolve.resolveToCall
-import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
 import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.FqName
@@ -36,7 +34,6 @@ import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
-import org.jetbrains.kotlin.resolve.calls.model.ArgumentMatch
 
 class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
     override fun getName(): String = "Generated test tag"
@@ -62,14 +59,15 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
                     && declaration.hasComposeModifier()
                     && callExpression.containsObjectModifierWithoutTag()
                 ) {
-                    val tag = createTag(callExpression, declaration)
-                    result.add(
-                        TestTagLineMarkerInfo(
-                            element = leaf,
-                            tag = tag,
-                            message = "Copy possible testTag: $tag"
-                        ),
-                    )
+                    createTag(callExpression, declaration)?.let { tag ->
+                        result.add(
+                            TestTagLineMarkerInfo(
+                                element = leaf,
+                                tag = tag,
+                                message = "Copy possible testTag: $tag"
+                            ),
+                        )
+                    }
                 }
             }
     }
@@ -77,18 +75,19 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
     private fun createTag(
         call: KtCallExpression,
         declaration: KtNamedFunction,
-    ): String {
+    ): String? {
         val isKotlin2Using = ExternalCompilerVersionProvider.findLatest(call.project)?.kotlinVersion?.isAtLeast(2, 0) == true
+        val parentOfExpression = call.getParentOfExpression() ?: return null
         return buildString {
             append(call.containingKtFile.name.removeSuffix(".kt"))
             append("-")
-            call.getParentOfExpression().let { parent ->
-                append(parent?.name)
+            parentOfExpression.let { parent ->
+                append(parent.name)
                 append("(")
                 if (isKotlin2Using) {
-                    append(parent?.startOffset)
+                    append(parent.startOffset)
                 } else {
-                    append(parent?.startOffsetToFunKeyword())
+                    append(parent.startOffsetToFunKeyword())
                 }
                 append(")-")
             }
@@ -112,9 +111,8 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
     private fun KtCallExpression.searchDeclaredFunction(): KtNamedFunction? =
         calleeExpression?.references?.firstOrNull()?.resolve()?.safeCast()
 
-    private fun KtDeclaration.isComposableLambda(): Boolean {
-        val type = (resolveToDescriptorIfAny() as? CallableDescriptor)?.returnType
-        return type?.isFunctionType == true && type.annotations.any { annotation -> annotation.fqName == Composable }
+    private fun KtDeclaration.isComposableLambda(): Boolean = analyze(this) {
+        return returnType.isFunctionType && returnType.annotations.any { annotation -> annotation.classId?.asSingleFqName() == Composable }
     }
 
     private fun KtNamedFunction.hasComposeModifier(): Boolean =
@@ -127,20 +125,21 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
 
     private fun KtParameter.typeFqName(): FqName? = this.descriptor?.type?.fqName
 
-    private fun KtCallExpression.containsObjectModifierWithoutTag(): Boolean {
+    private fun KtCallExpression.containsObjectModifierWithoutTag(): Boolean = analyze(this) {
         val resolvedCall = resolveToCall()
+        val functionCall = resolvedCall?.singleFunctionCallOrNull()
         var containsDeclaredModifier = valueArguments.isEmpty()
-        val explicitArgumentWithoutTag = valueArguments.any {
-            val argumentExpression = it.getArgumentExpression()?.text
-            val param = resolvedCall?.getArgumentMapping(it) as? ArgumentMatch
-            val isModifierParam = param?.valueParameter?.name?.asString() == "modifier"
+        val explicitArgumentWithoutTag = valueArguments.any { arg ->
+            val argumentExpression = arg.getArgumentExpression()?.text
+            val param = functionCall?.argumentMapping?.get(arg.getArgumentExpression())
+            val isModifierParam = param?.name?.asString() == "modifier"
 
             if (isModifierParam) {
                 containsDeclaredModifier = true
             }
 
             isModifierParam
-                    && it?.searchTopReceiverObject()?.fqName?.asString() == MODIFIER_COMPANION
+                    && arg?.searchTopReceiverObject()?.fqName?.asString() == MODIFIER_COMPANION
                     && argumentExpression?.contains(testTagRegex) == false
         }
 

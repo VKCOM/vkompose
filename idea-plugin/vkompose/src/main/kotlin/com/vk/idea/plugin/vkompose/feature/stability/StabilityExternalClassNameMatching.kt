@@ -1,10 +1,10 @@
 package com.vk.idea.plugin.vkompose.feature.stability
 
+import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.analysis.api.types.classSymbol
+import org.jetbrains.kotlin.analysis.api.types.symbol
 import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
-import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.types.KotlinType
 
 internal const val STABILITY_WILDCARD_SINGLE = '*'
 internal const val STABILITY_WILDCARD_MULTI = "**"
@@ -30,7 +30,7 @@ class FqNameMatcherCollection(private val matchers: Set<FqNameMatcher>) {
         return matcherTree.findFirstPositiveMatcher(name)?.mask
     }
 
-    fun matches(name: FqName?, superTypes: List<KotlinType>): Boolean {
+    fun matches(name: FqName?, superTypes: List<KaType>): Boolean {
         if (matchers.isEmpty()) return false
         if (name == null) return false
 
@@ -38,7 +38,7 @@ class FqNameMatcherCollection(private val matchers: Set<FqNameMatcher>) {
             return it
         }
 
-        val superTypeNames = superTypes.mapNotNull { it.fqName }
+        val superTypeNames = superTypes.mapNotNull { it.symbol?.classId?.asSingleFqName() }
         return (matcherTree.findFirstPositiveMatcher(name) != null ||
             superTypeNames.any { superName ->
                 matcherTree.findFirstPositiveMatcher(superName) != null

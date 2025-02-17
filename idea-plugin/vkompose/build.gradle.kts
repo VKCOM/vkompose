@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "com.vk.idea.plugin.vkompose"
-version = "0.3.1-${currentVersion.versionName}"
+version = "0.4.0-${currentVersion.versionName}"
 
 repositories {
     mavenCentral()
@@ -24,6 +24,16 @@ repositories {
 
 kotlin {
     jvmToolchain(17)
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
+    }
+}
+
+tasks.runIde {
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        listOf("-Didea.kotlin.plugin.use.k2=true")
+    }
 }
 
 intellijPlatform {

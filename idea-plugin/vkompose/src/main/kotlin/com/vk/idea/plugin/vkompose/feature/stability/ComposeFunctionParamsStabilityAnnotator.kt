@@ -7,7 +7,6 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.findParentOfType
 import com.vk.idea.plugin.vkompose.extensions.getQualifiedName
-import com.vk.idea.plugin.vkompose.extensions.type
 import com.vk.idea.plugin.vkompose.settings.ComposeSettingStateComponent
 import com.vk.idea.plugin.vkompose.utils.COMPOSE_PACKAGE_NAME
 import com.vk.idea.plugin.vkompose.utils.ComposeClassName.Composable
@@ -15,14 +14,16 @@ import com.vk.idea.plugin.vkompose.utils.ComposeClassName.ExplicitGroupsComposab
 import com.vk.idea.plugin.vkompose.utils.ComposeClassName.NonRestartableComposable
 import com.vk.idea.plugin.vkompose.utils.ComposeClassName.NonSkippableComposable
 import com.vk.idea.plugin.vkompose.utils.hasAnnotation
-import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
-import org.jetbrains.kotlin.idea.caches.resolve.findModuleDescriptor
-import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule
+import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
+import org.jetbrains.kotlin.analysis.api.types.KaErrorType
+import org.jetbrains.kotlin.analysis.api.types.symbol
 import org.jetbrains.kotlin.idea.inspections.RemoveAnnotationFix
 import org.jetbrains.kotlin.idea.inspections.suppress.AnnotationHostKind
 import org.jetbrains.kotlin.idea.inspections.suppress.KotlinSuppressIntentionAction
 import org.jetbrains.kotlin.idea.quickfix.RemoveArgumentFix
-import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
@@ -30,7 +31,6 @@ import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtContextReceiver
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
-import org.jetbrains.kotlin.types.typeUtil.isUnit
 
 class ComposeFunctionParamsStabilityAnnotator : Annotator {
 
@@ -62,55 +62,68 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
             return
         }
 
-        stabilityInferencer.setFunctionModule(element.findModuleDescriptor())
-        val problemParams = mutableMapOf<KtParameter, KtStability>()
-        val problemContextReceivers = mutableMapOf<KtContextReceiver, KtStability>()
+        analyze(element) {
+            (element.symbol.containingModule as? KaSourceModule)?.let { stabilityInferencer.setFunctionModule(it) }
+            val problemParams = mutableMapOf<KtParameter, KtStability>()
+            val problemContextReceivers = mutableMapOf<KtContextReceiver, KtStability>()
 
 
-        val extensionReceiverType = element.resolveToDescriptorIfAny()?.extensionReceiverParameter?.type
-        var extensionReceiverStability: KtStability? = null
-        val extensionFqName = extensionReceiverType?.fqName
-        if (!extensionFqName.shouldBeIgnored() && extensionFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(extensionReceiverType).knownUnstable()) {
-            extensionReceiverStability = stabilityInferencer.ktStabilityOf(extensionReceiverType)
-        }
-
-        val parentClassType = element.findParentOfType<KtClass>()?.resolveToDescriptorIfAny()?.defaultType
-        var dispatchReceiverStability: KtStability? = null
-        val dispatchFqName = parentClassType?.fqName
-        if (!dispatchFqName.shouldBeIgnored() && dispatchFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(parentClassType).knownUnstable()) {
-            dispatchReceiverStability = stabilityInferencer.ktStabilityOf(parentClassType)
-        }
-
-        for (receiver in element.contextReceivers) {
-            val type = receiver.type ?: continue
-            val fqName = type.fqName
-
-            val stability = stabilityInferencer.ktStabilityOf(type)
-            val isUnstable = stability.knownUnstable()
-            val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
-            val isIgnored = fqName.shouldBeIgnored()
-
-            if (!isIgnored && !isFromCompose && isUnstable) {
-                problemContextReceivers += receiver to stability
+            val extensionReceiverType = (element.symbol as? KaFunctionSymbol)?.receiverParameter?.type
+            var extensionReceiverStability: KtStability? = null
+            val extensionFqName = extensionReceiverType?.symbol?.classId?.asSingleFqName()
+            if (!extensionFqName.shouldBeIgnored() && extensionFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(extensionReceiverType).knownUnstable()) {
+                extensionReceiverStability = stabilityInferencer.ktStabilityOf(extensionReceiverType)
             }
-        }
 
-        for (valueParameter in element.valueParameters) {
-            val returnType = valueParameter.descriptor?.type ?: continue
-            val fqName = returnType.fqName
-
-            val isRequired = valueParameter.defaultValue == null
-            val stability = stabilityInferencer.ktStabilityOf(returnType)
-            val isUnstable = stability.knownUnstable()
-            val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
-            val isIgnored = fqName.shouldBeIgnored()
-
-            if (!isIgnored && !isFromCompose && isUnstable && (isRequired || isStrongSkippingEnabled)) {
-                problemParams += valueParameter to stability
+            val parentClassType = element.findParentOfType<KtClass>()?.let {
+                analyze(it) { (it.symbol as? KaNamedClassSymbol)?.defaultType }
             }
+            var dispatchReceiverStability: KtStability? = null
+            val dispatchFqName = parentClassType?.symbol?.classId?.asSingleFqName()
+            if (!dispatchFqName.shouldBeIgnored() && dispatchFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(parentClassType).knownUnstable()) {
+                dispatchReceiverStability = stabilityInferencer.ktStabilityOf(parentClassType)
+            }
+
+            for (receiver in element.contextReceivers) {
+                analyze(receiver) {
+                    val type = receiver.expectedType.takeIf { it !is KaErrorType }
+                    if (type != null) {
+                        val fqName = type.symbol?.classId?.asSingleFqName()
+
+                        val stability = stabilityInferencer.ktStabilityOf(type)
+                        val isUnstable = stability.knownUnstable()
+                        val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
+                        val isIgnored = fqName.shouldBeIgnored()
+
+                        if (!isIgnored && !isFromCompose && isUnstable) {
+                            problemContextReceivers += receiver to stability
+                        }
+                    }
+                }
+            }
+
+            for (valueParameter in element.valueParameters) {
+                analyze(valueParameter) {
+                    val returnType = valueParameter.returnType.takeIf { it !is KaErrorType }
+                    if (returnType != null) {
+                        val fqName = valueParameter.returnType.symbol?.classId?.asSingleFqName()
+
+                        val isRequired = valueParameter.defaultValue == null
+                        val stability = stabilityInferencer.ktStabilityOf(returnType)
+                        val isUnstable = stability.knownUnstable()
+                        val isFromCompose = fqName?.startsWith(COMPOSE_PACKAGE_NAME) == true
+                        val isIgnored = fqName.shouldBeIgnored()
+
+                        if (!isIgnored && !isFromCompose && isUnstable && (isRequired || isStrongSkippingEnabled)) {
+                            problemParams += valueParameter to stability
+                        }
+                    }
+                }
+            }
+
+            showMessages(element, holder, problemParams, problemContextReceivers, extensionReceiverStability, dispatchReceiverStability)
         }
 
-        showMessages(element, holder, problemParams, problemContextReceivers, extensionReceiverStability, dispatchReceiverStability)
 
     }
 
@@ -233,7 +246,7 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
         hasModifier(KtTokens.INLINE_KEYWORD) -> false
         hasAnnotation(NonRestartableComposable) -> false
         hasAnnotation(ExplicitGroupsComposable) -> false
-        resolveToDescriptorIfAny()?.returnType?.isUnit() == false -> false
+        analyze(this) { !returnType.isUnitType } -> false
         else -> true
     }
 
