@@ -318,7 +318,7 @@ class StabilityInferencer(
         for (member in declaration.memberScope.declarations) {
             when (member) {
                 is KaPropertySymbol -> {
-                    if (member.isOverride) continue  // skip properties from parent
+                    if (member.containingSymbol != declaration) continue  // skip properties from parent
                     if (member.getter?.isDefault == false && member.isVal && !member.isDelegatedProperty) continue // skip properties with non default getter because they are usually like function
 
                     // custom getter and setter without using field

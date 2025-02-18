@@ -18,10 +18,7 @@ import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.base.projectStructure.ExternalCompilerVersionProvider
-import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
-import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
@@ -29,7 +26,6 @@ import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
-import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
@@ -117,13 +113,14 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
 
     private fun KtNamedFunction.hasComposeModifier(): Boolean =
         valueParameters.any {
-            it.text.startsWith("modifier") && it.typeFqName()?.asString() == MODIFIER
+            analyze(it) {
+                val fqName =  it.symbol.returnType.expandedSymbol?.classId?.asSingleFqName()?.asString()
+                it.text.startsWith("modifier") && fqName == MODIFIER
+            }
         }
 
 
     private fun KtNamedFunction.startOffsetToFunKeyword(): Int? = funKeyword?.startOffset
-
-    private fun KtParameter.typeFqName(): FqName? = this.descriptor?.type?.fqName
 
     private fun KtCallExpression.containsObjectModifierWithoutTag(): Boolean = analyze(this) {
         val resolvedCall = resolveToCall()
