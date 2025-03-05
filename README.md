@@ -8,7 +8,7 @@ The repository contains utilities for Jetpack Compose, including Kotlin compiler
 
 | Plugin Version | Kotlin version  |
 |----------------|-----------------|
-| 0.7            | 1.8.10 - 1.9.23 | 
+| 0.6.2          | 1.8.10 - 1.9.23 | 
 | 0.6-k2         | 2.0             |
 | 0.6.2-k2       | 2.0.20          |
 | 0.7            | 2.1.0           |
