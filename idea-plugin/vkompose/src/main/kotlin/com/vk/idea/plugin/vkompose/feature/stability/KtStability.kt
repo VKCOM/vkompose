@@ -4,6 +4,7 @@ package com.vk.idea.plugin.vkompose.feature.stability
 
 import com.vk.idea.plugin.vkompose.extensions.resolveDelegateType
 import com.vk.idea.plugin.vkompose.utils.ComposeClassName
+import com.vk.idea.plugin.vkompose.utils.isInlineClass
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule

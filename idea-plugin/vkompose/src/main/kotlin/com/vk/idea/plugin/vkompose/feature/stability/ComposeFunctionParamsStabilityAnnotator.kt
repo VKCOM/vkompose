@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.receiverType
 import org.jetbrains.kotlin.analysis.api.types.KaErrorType
 import org.jetbrains.kotlin.analysis.api.types.symbol
 import org.jetbrains.kotlin.idea.inspections.RemoveAnnotationFix
@@ -68,7 +69,7 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
             val problemContextReceivers = mutableMapOf<KtContextReceiver, KtStability>()
 
 
-            val extensionReceiverType = (element.symbol as? KaFunctionSymbol)?.receiverParameter?.type
+            val extensionReceiverType = (element.symbol as? KaFunctionSymbol)?.receiverType
             var extensionReceiverStability: KtStability? = null
             val extensionFqName = extensionReceiverType?.symbol?.classId?.asSingleFqName()
             if (!extensionFqName.shouldBeIgnored() && extensionFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(extensionReceiverType).knownUnstable()) {

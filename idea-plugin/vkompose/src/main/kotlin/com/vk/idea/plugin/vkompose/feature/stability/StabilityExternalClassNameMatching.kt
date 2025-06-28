@@ -1,9 +1,7 @@
 package com.vk.idea.plugin.vkompose.feature.stability
 
 import org.jetbrains.kotlin.analysis.api.types.KaType
-import org.jetbrains.kotlin.analysis.api.types.classSymbol
 import org.jetbrains.kotlin.analysis.api.types.symbol
-import org.jetbrains.kotlin.idea.base.utils.fqname.fqName
 import org.jetbrains.kotlin.name.FqName
 
 internal const val STABILITY_WILDCARD_SINGLE = '*'

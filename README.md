@@ -8,7 +8,7 @@ The repository contains utilities for Jetpack Compose, including Kotlin compiler
 
 | Plugin Version | Kotlin version  |
 |----------------|-----------------|
-| 0.6.2          | 1.8.10 - 1.9.23 | 
+| 0.6.2          | 1.8.10 - 1.9.23 |
 | 0.6-k2         | 2.0             |
 | 0.6.2-k2       | 2.0.20          |
 | 0.7            | 2.1.0           |
@@ -38,7 +38,7 @@ vkompose {
   skippabilityCheck {
     // For more see
     // https://android-review.googlesource.com/c/platform/frameworks/support/+/2668595
-    // https://issuetracker.google.com/issues/309765121 
+    // https://issuetracker.google.com/issues/309765121
     stabilityConfigurationPath = "/path/file.config"
 
     // since 0.7 if strong skipping feature of Compose Compiler is enabled
@@ -145,7 +145,7 @@ Use these placeholders to generate tag:
 
 'range' in %outer_function_name% can be set as:
 - range=: or range=1: - include all outer functions. default value
-- range=2: - skip first function 
+- range=2: - skip first function
 - range=-1: - last function
 - range=1:2 - first and second functions
 
@@ -173,7 +173,7 @@ The IDEA plugin currently offers two features:
 Both features can be disabled in preferences:
 ![vkompose-idea-plugin-stability-preferences.png](art/vkompose-idea-plugin-stability-preferences.png)
 ![vkompose-idea-plugin-test-tag-gutter-icon-preference.png](art/vkompose-idea-plugin-test-tag-gutter-icon-preference.png)
-You can download and install it from the jar file for [Koala](idea-plugin/vkompose/vkompose-0.4.1-Koala.jar), [Ladybug](idea-plugin/vkompose/vkompose-0.4.1-Ladybug.jar) or [Meerkat](idea-plugin/vkompose/vkompose-0.4.1-Meerkat.jar) versions of AS.
+You can download and install it from the jar file for [Koala](idea-plugin/vkompose/vkompose-0.4.1-Koala.jar), [Ladybug](idea-plugin/vkompose/vkompose-0.4.1-Ladybug.jar), [Meerkat](idea-plugin/vkompose/vkompose-0.4.1-Meerkat.jar) or [Narwhal](idea-plugin/vkompose/vkompose-0.4.1-Narwhal.jar) versions of AS.
 
 ### [Detekt](https://github.com/detekt/detekt) Rule
 
