@@ -10,7 +10,6 @@ import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
-import org.jetbrains.kotlin.js.translate.utils.BindingUtils
 import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtContextReceiver
@@ -19,6 +18,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.resolve.BindingContext
+import org.jetbrains.kotlin.resolve.BindingContextUtils
 import org.jetbrains.kotlin.resolve.calls.util.getType
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.typeUtil.representativeUpperBound
@@ -28,10 +28,7 @@ fun KtAnnotated.hasAnnotation(name: String): Boolean =
 
 fun KtContextReceiver.resolveType(bindingContext: BindingContext): KotlinType? {
     val reference = typeReference() ?: return null
-    return BindingUtils.getTypeByReference(
-        bindingContext,
-        reference,
-    )
+    return BindingContextUtils.getNotNull(bindingContext, BindingContext.TYPE, reference)
 }
 
 internal fun PropertyDescriptor.resolveDelegateType(bindingContext: BindingContext): KotlinType? {

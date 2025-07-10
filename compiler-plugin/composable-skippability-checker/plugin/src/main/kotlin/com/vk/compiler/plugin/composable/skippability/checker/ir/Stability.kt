@@ -1,3 +1,5 @@
+@file:OptIn(DeprecatedForRemovalCompilerApi::class)
+
 package com.vk.compiler.plugin.composable.skippability.checker.ir
 
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.StabilityInferred
@@ -5,6 +7,7 @@ import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.S
 import com.vk.compiler.plugin.composable.skippability.checker.FqNameMatcher
 import com.vk.compiler.plugin.composable.skippability.checker.FqNameMatcherCollection
 import com.vk.compiler.plugin.composable.skippability.checker.KnownStableConstructs
+import org.jetbrains.kotlin.DeprecatedForRemovalCompilerApi
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor

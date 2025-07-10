@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.com.intellij.mock.MockProject
 import org.jetbrains.kotlin.com.intellij.openapi.extensions.LoadingOrder
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 
 @ExperimentalCompilerApi
@@ -17,7 +18,7 @@ class SkippabilityComponentRegistrar : ComponentRegistrar {
     override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
         if (configuration.get(SkippabilityCommandLineProcessor.ENABLED, true)) {
 
-            val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
+            val messageCollector = configuration.get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
 
             val isStrongSkippingModeEnabled = configuration.get(SkippabilityCommandLineProcessor.STRONG_SKIPPING_MODE_ENABLED, false)
             val isStrongSkippingFailFastEnabled = configuration.get(SkippabilityCommandLineProcessor.STRONG_SKIPPING_MODE_FAIL_FAST_ENABLED, false)

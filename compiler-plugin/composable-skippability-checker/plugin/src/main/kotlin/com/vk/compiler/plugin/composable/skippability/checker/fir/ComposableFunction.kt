@@ -9,7 +9,8 @@ object ComposableFunction : FunctionTypeKind(
     FqName.topLevel(Name.identifier("androidx.compose.runtime.internal")),
     "ComposableFunction",
     ComposeClassId.Composable,
-    isReflectType = false
+    isReflectType = false,
+    isInlineable = true
 ) {
     override val prefixForTypeRender: String
         get() = "@Composable"
@@ -21,7 +22,8 @@ object KComposableFunction : FunctionTypeKind(
     FqName.topLevel(Name.identifier("androidx.compose.runtime.internal")),
     "KComposableFunction",
     ComposeClassId.Composable,
-    isReflectType = true
+    isReflectType = true,
+    isInlineable = false
 ) {
     override fun nonReflectKind(): FunctionTypeKind = ComposableFunction
 }

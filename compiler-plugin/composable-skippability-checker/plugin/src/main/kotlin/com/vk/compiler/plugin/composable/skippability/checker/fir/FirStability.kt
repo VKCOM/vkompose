@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.checkers.typeParameterSymbols
+import org.jetbrains.kotlin.fir.declarations.DirectDeclarationsAccess
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.hasAnnotation
 import org.jetbrains.kotlin.fir.declarations.isInlineOrValueClass
@@ -270,6 +271,7 @@ private fun firStabilityOf(
 
     var stability = FirStability.Stable
 
+    @OptIn(DirectDeclarationsAccess::class)
     for (member in classSymbol.declarationSymbols) {
         when (member) {
             is FirPropertySymbol -> {

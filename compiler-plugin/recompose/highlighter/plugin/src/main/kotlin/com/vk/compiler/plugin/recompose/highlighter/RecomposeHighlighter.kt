@@ -1,5 +1,6 @@
 package com.vk.compiler.plugin.recompose.highlighter
 
+import org.jetbrains.kotlin.DeprecatedForRemovalCompilerApi
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -22,6 +23,7 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
+@OptIn(DeprecatedForRemovalCompilerApi::class)
 internal class RecomposeHighlighter(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoid() {

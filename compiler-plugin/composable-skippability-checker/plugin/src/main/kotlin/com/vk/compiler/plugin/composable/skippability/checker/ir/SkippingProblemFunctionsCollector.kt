@@ -9,6 +9,7 @@ import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.N
 import com.vk.compiler.plugin.composable.skippability.checker.Keys.NON_SKIPPABLE_COMPOSABLE
 import com.vk.compiler.plugin.composable.skippability.checker.Keys.PARAMS_COMPARED_BY_REF
 import com.vk.compiler.plugin.composable.skippability.checker.Keys.SUPPRESS
+import org.jetbrains.kotlin.DeprecatedForRemovalCompilerApi
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
@@ -29,16 +30,17 @@ import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.parentAsClass
 import org.jetbrains.kotlin.ir.util.parentClassOrNull
 import org.jetbrains.kotlin.ir.util.statements
-import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
+import org.jetbrains.kotlin.ir.visitors.IrVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.name.SpecialNames
 
+@OptIn(DeprecatedForRemovalCompilerApi::class)
 internal class SkippingProblemFunctionsCollector(
     private val isStrongSkippingModeEnabled: Boolean,
     private val problemFunctions: MutableSet<ReportFunction>,
     private val fixedSuppressedFunctions: MutableSet<ReportFunction>,
     private val stabilityInferencer: StabilityInferencer
-) : IrElementVisitorVoid {
+) : IrVisitorVoid() {
 
     private var currentFunction: FunctionInfo? = null
 

@@ -1,5 +1,6 @@
 package com.vk.compiler.plugin.compose.test.tag.cleaner
 
+import org.jetbrains.kotlin.DeprecatedForRemovalCompilerApi
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -8,6 +9,7 @@ import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.toIrConst
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 
+@OptIn(DeprecatedForRemovalCompilerApi::class)
 internal class TestTagCleaner(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoid() {

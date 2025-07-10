@@ -1,5 +1,6 @@
 package com.vk.compiler.plugin.compose.test.tag.drawer
 
+import org.jetbrains.kotlin.DeprecatedForRemovalCompilerApi
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -19,6 +20,7 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
+@OptIn(DeprecatedForRemovalCompilerApi::class)
 internal class TestTagDrawer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoid() {

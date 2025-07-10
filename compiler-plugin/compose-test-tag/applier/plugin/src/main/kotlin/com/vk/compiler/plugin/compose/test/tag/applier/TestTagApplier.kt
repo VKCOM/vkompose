@@ -1,5 +1,6 @@
 package com.vk.compiler.plugin.compose.test.tag.applier
 
+import org.jetbrains.kotlin.DeprecatedForRemovalCompilerApi
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ir.isAnonymous
 import org.jetbrains.kotlin.ir.IrStatement
@@ -32,6 +33,7 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.popLast
 
+@OptIn(DeprecatedForRemovalCompilerApi::class)
 internal class TestTagApplier(
     private val pluginContext: IrPluginContext,
     private val tagTemplate: String

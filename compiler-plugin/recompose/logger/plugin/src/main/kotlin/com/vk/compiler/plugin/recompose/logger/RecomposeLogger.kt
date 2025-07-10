@@ -1,5 +1,8 @@
+@file:OptIn(DeprecatedForRemovalCompilerApi::class)
+
 package com.vk.compiler.plugin.recompose.logger
 
+import org.jetbrains.kotlin.DeprecatedForRemovalCompilerApi
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ir.isAnonymous
 import org.jetbrains.kotlin.ir.IrStatement

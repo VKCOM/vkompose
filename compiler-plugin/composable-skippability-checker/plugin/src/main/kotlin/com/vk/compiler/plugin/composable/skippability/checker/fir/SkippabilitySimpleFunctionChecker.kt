@@ -30,13 +30,11 @@ import org.jetbrains.kotlin.name.SpecialNames
 
 internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker(MppCheckerKind.Common) {
 
+    context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(
         declaration: FirSimpleFunction,
-        context: CheckerContext,
-        reporter: DiagnosticReporter
     ) {
         val session = context.session
-//        val isComposable = declaration.hasAnnotationSafe(ComposeClassId.Composable)
         val isComposable = declaration.hasAnnotationSafe(ComposeClassId.Composable, session)
 
         if (!isComposable || !declaration.isRestartable(session)) return
@@ -64,33 +62,34 @@ internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker(Mpp
 
             if (callAnnotation == null || !isSuppress) return@any false
 
-            callAnnotation.arguments.any { it.source?.lighterASTNode.toString().contains(Keys.NON_SKIPPABLE_COMPOSABLE) }
+            callAnnotation.arguments.any {
+                it.source?.lighterASTNode.toString().contains(Keys.NON_SKIPPABLE_COMPOSABLE)
+            }
         }
 
 
+        with(context) {
 
-        when {
-            !suppressAnnotation && notSkippableParams.isNotEmpty() -> {
-                reporter.reportOn(
-                    declaration.source,
-                    NON_SKIPPABLE_FUNCTION,
-                    context
-                )
-                notSkippableParams.forEach {
+            when {
+                !suppressAnnotation && notSkippableParams.isNotEmpty() -> {
                     reporter.reportOn(
-                        it.source,
-                        UNSTABLE_FUNCTION_PARAM,
-                        context
+                        declaration.source,
+                        NON_SKIPPABLE_FUNCTION,
+                    )
+                    notSkippableParams.forEach {
+                        reporter.reportOn(
+                            source = it.source,
+                            factory = UNSTABLE_FUNCTION_PARAM,
+                        )
+                    }
+                }
+
+                suppressAnnotation && notSkippableParams.isEmpty() -> {
+                    reporter.reportOn(
+                        declaration.source,
+                        UNUSED_SKIPPABLE_SUPPRESS,
                     )
                 }
-            }
-
-            suppressAnnotation && notSkippableParams.isEmpty() -> {
-                reporter.reportOn(
-                    declaration.source,
-                    UNUSED_SKIPPABLE_SUPPRESS,
-                    context
-                )
             }
         }
     }
