@@ -29,8 +29,8 @@ jobs:
         run: ./scripts/publish_rules_remote.sh
         env:
           REMOTE_REPO_PUBLIC_URL: ${{ secrets.REMOTE_REPO_PUBLIC_URL }}
-          REMOTE_REPO_PUBLIC_USER: ${{ secrets.ARTIFACTORY_PUBLIC_USER }}
-          REMOTE_REPO_PUBLIC_PASSWORD: ${{ secrets.ARTIFACTORY_PUBLIC_PASSWORD }}
+          REMOTE_REPO_PUBLIC_USER: ${{ secrets.REMOTE_REPO_PUBLIC_USER }}
+          REMOTE_REPO_PUBLIC_PASSWORD: ${{ secrets.REMOTE_REPO_PUBLIC_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
