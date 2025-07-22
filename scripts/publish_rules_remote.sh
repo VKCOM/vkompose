@@ -5,5 +5,5 @@ function checkStatus() {
     fi
 }
 
-./gradlew :rules:common:publishAllPublicationsToPublicRemoteRepository || checkStatus
-./gradlew :rules:detekt:publishAllPublicationsToPublicRemoteRepository || checkStatus
+./gradlew :rules:common:publishAllPublicationsToMavenCentralRepository || checkStatus
+./gradlew :rules:detekt:publishAllPublicationsToMavenCentralRepository || checkStatus
