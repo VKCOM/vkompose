@@ -23,4 +23,18 @@ android {
             jvmTarget = JvmTarget.JVM_11
         }
     }
+
+    lint {
+        // crashed for no reason
+        disable.addAll(
+            setOf(
+                "MutableCollectionMutableState",
+                "ComposableModifierFactory",
+                "ModifierFactoryExtensionFunction",
+                "ModifierFactoryReturnType",
+                "ModifierFactoryUnreferencedReceiver",
+                "AutoboxingStateCreation"
+            )
+        )
+    }
 }
