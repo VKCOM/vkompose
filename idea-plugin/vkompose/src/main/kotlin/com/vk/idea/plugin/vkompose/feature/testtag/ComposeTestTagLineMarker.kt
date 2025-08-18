@@ -17,7 +17,7 @@ import javax.swing.Icon
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.idea.base.projectStructure.ExternalCompilerVersionProvider
+import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginModeProvider
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDeclaration
@@ -72,7 +72,7 @@ class ComposeTestTagLineMarker : LineMarkerProviderDescriptor() {
         call: KtCallExpression,
         declaration: KtNamedFunction,
     ): String? {
-        val isKotlin2Using = ExternalCompilerVersionProvider.findLatest(call.project)?.kotlinVersion?.isAtLeast(2, 0) == true
+        val isKotlin2Using = KotlinPluginModeProvider.isK2Mode()
         val parentOfExpression = call.getParentOfExpression() ?: return null
         return buildString {
             append(call.containingKtFile.name.removeSuffix(".kt"))

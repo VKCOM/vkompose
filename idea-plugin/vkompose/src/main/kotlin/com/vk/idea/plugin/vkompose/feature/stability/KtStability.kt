@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaDeclarationSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbolModality
@@ -18,6 +19,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaSymbolVisibility
 import org.jetbrains.kotlin.analysis.api.symbols.KaTypeAliasSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaTypeParameterSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaVariableSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.name
 import org.jetbrains.kotlin.analysis.api.symbols.typeParameters
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaDynamicType
@@ -26,9 +28,12 @@ import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
 import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
 import org.jetbrains.kotlin.analysis.api.types.symbol
 import org.jetbrains.kotlin.idea.base.analysis.api.utils.isJavaSourceOrLibrary
-import org.jetbrains.kotlin.idea.debugger.core.isInlineClass
+import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginModeProvider
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.psi.KtClass
+
+val logger = com.intellij.openapi.diagnostic.Logger.getInstance(KtStability::class.java)
 
 sealed class KtStability {
     // class Foo(val bar: Int)
@@ -182,10 +187,30 @@ fun KtStability.forEach(callback: (KtStability) -> Unit) {
 }
 
 context(KaSession)
-fun KaClassLikeSymbol.hasStableMarkerAnnotation(): Boolean = (psi as KtClass).annotationEntries.any { annotation ->
-    annotation.typeReference?.type?.symbol?.annotations?.any {
-        it.classId?.asSingleFqName() == ComposeClassName.StableMarker
-    } == true
+fun KaDeclarationSymbol.hasStableMarkerAnnotation(visited: MutableSet<ClassId> = mutableSetOf()): Boolean {
+    return if (KotlinPluginModeProvider.isK2Mode()) {
+        annotations.any { annotation ->
+            val classId = annotation.classId ?: return@any false
+            if (!visited.add(classId)) return@any false
+            classId.asSingleFqName() == ComposeClassName.StableMarker
+                    ||  annotation.constructorSymbol?.containingDeclaration?.hasStableMarkerAnnotation(visited) == true
+        }
+    } else {
+        val psiCl = psi
+        when {
+            psiCl is KtClass -> {
+                psiCl.annotationEntries.any { annotation ->
+                    annotation.typeReference?.type?.symbol?.annotations?.any {
+                        it.classId?.asSingleFqName() == ComposeClassName.StableMarker
+                    } == true
+                }
+            }
+            else -> {
+                logger.error("Can't extract psi from ${this.name?.asString()}")
+                true
+            }
+        }
+    }
 }
 
 
@@ -243,7 +268,7 @@ class StabilityInferencer(
         ktStabilityOf(kotlinType, emptyMap(), emptySet())
 
     context(KaSession)
-    @Suppress("ReturnCount", "NestedBlockDepth") // expected
+    @Suppress("ReturnCount", "NestedBlockDepth", "CyclomaticComplexMethod") // expected
     private fun ktStabilityOf(
         declaration: KaClassSymbol,
         substitutions: Map<KaTypeParameterSymbol, KaType?>,
