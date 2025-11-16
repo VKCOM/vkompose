@@ -174,7 +174,7 @@ The IDEA plugin currently offers two features:
 Both features can be disabled in preferences:
 ![vkompose-idea-plugin-stability-preferences.png](art/vkompose-idea-plugin-stability-preferences.png)
 ![vkompose-idea-plugin-test-tag-gutter-icon-preference.png](art/vkompose-idea-plugin-test-tag-gutter-icon-preference.png)
-You can download and install it from the jar file for [Narwhal](idea-plugin/vkompose/vkompose-0.4.2-Narwhal.jar) version of AS.
+You can download and install it from the jar file for [Narwhal](idea-plugin/vkompose/vkompose-0.4.2-Narwhal.jar), [Otter](idea-plugin/vkompose/vkompose-0.4.2-Otter.jar) versions of AS.
 
 ### [Detekt](https://github.com/detekt/detekt) Rule
 
