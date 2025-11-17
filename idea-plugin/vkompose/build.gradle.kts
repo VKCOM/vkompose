@@ -3,14 +3,14 @@ enum class Version(val ideaVersion: String, val versionName: String, val sinceBu
     Ladybug("2024.2", "Ladybug", "242"),
     Meerkat("2024.3", "Meerkat", "243"),
     Narwhal("2025.1", "Narwhal", "251"),
-
+    Otter("2025.2", "Otter", "252"),
 }
 
-val currentVersion = Version.Narwhal
+val currentVersion = Version.Otter
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "2.1.0"
-    id("org.jetbrains.intellij.platform") version "2.2.0"
+    id("org.jetbrains.intellij.platform") version "2.7.2"
 }
 
 group = "com.vk.idea.plugin.vkompose"

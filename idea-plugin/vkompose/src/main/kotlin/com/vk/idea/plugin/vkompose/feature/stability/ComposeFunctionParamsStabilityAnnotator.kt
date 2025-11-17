@@ -53,6 +53,7 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
 
     private val stabilityInferencer = StabilityInferencer(stableTypeMatchers)
 
+    @Suppress("ComplexCondition", "CyclomaticComplexMethod") // expected
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         if (!settings.isFunctionSkippabilityCheckingEnabled) return
 
@@ -69,21 +70,29 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
             val problemContextReceivers = mutableMapOf<KtContextReceiver, KtStability>()
 
 
-            val extensionReceiverType = (element.symbol as? KaFunctionSymbol)?.receiverType
+            val extensionReceiverType = element.symbol.receiverType
             var extensionReceiverStability: KtStability? = null
             val extensionFqName = extensionReceiverType?.symbol?.classId?.asSingleFqName()
             if (!extensionFqName.shouldBeIgnored() && extensionFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(extensionReceiverType).knownUnstable()) {
                 extensionReceiverStability = stabilityInferencer.ktStabilityOf(extensionReceiverType)
             }
 
-            val parentClassType = element.findParentOfType<KtClass>()?.let {
-                analyze(it) { (it.symbol as? KaNamedClassSymbol)?.defaultType }
-            }
+
             var dispatchReceiverStability: KtStability? = null
-            val dispatchFqName = parentClassType?.symbol?.classId?.asSingleFqName()
-            if (!dispatchFqName.shouldBeIgnored() && dispatchFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false && stabilityInferencer.ktStabilityOf(parentClassType).knownUnstable()) {
-                dispatchReceiverStability = stabilityInferencer.ktStabilityOf(parentClassType)
+            element.findParentOfType<KtClass>()?.let {
+                analyze(it) {
+                    val symbol = it.symbol as? KaNamedClassSymbol
+                    val parentClassType = symbol?.defaultType
+                    val dispatchFqName = symbol?.classId?.asSingleFqName()
+                    if (parentClassType != null && !dispatchFqName.shouldBeIgnored() && dispatchFqName?.startsWith(COMPOSE_PACKAGE_NAME) == false) {
+                        val stability = stabilityInferencer.ktStabilityOf(parentClassType)
+                        if (stability.knownUnstable()) {
+                            dispatchReceiverStability = stabilityInferencer.ktStabilityOf(parentClassType)
+                        }
+                    }
+                }
             }
+
 
             for (receiver in element.contextReceivers) {
                 analyze(receiver) {
@@ -128,6 +137,7 @@ class ComposeFunctionParamsStabilityAnnotator : Annotator {
 
     }
 
+    @Suppress("CyclomaticComplexMethod") // expected
     private fun showMessages(
         function: KtNamedFunction,
         holder: AnnotationHolder,
