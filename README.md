@@ -13,6 +13,7 @@ The repository contains utilities for Jetpack Compose, including Kotlin compiler
 | 0.6.2-k2       | 2.0.20          |
 | 0.7            | 2.1.0           |
 | 0.7.1          | 2.2.0           |
+| 0.7.2          | 2.2.21          |
 
 Currently, the following compiler plugins are available:
 - Functions skippability checker: Determines [function skippability](https://github.com/androidx/androidx/blob/androidx-main/compose/compiler/design/compiler-metrics.md#functions-that-are-restartable-but-not-skippable) based on checking function parameters stability.
@@ -27,7 +28,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.7.1"
+    id("com.vk.vkompose") version "0.7.2"
 }
 ```
 
@@ -49,6 +50,9 @@ vkompose {
       // Fail compilation if there is any problem with strong skipping mode
       strongSkippingFailFastEnabled = false // false by default
     }
+    
+    // since 0.7.2 [experimental]
+    isFirEnabled = false // false by default
   }
 
   recompose {
@@ -94,13 +98,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.7.1"
-    id("com.vk.recompose-logger") version "0.7.1"
-    id("com.vk.compose-test-tag-applier") version "0.7.1"
-    id("com.vk.compose-test-tag-cleaner") version "0.7.1"
-    id("com.vk.compose-test-tag-drawer") version "0.7.1"
-    id("com.vk.compose-source-information-cleaner") version "0.7.1"
-    id("com.vk.composable-skippability-checker") version "0.7.1"
+    id("com.vk.recompose-highlighter") version "0.7.2"
+    id("com.vk.recompose-logger") version "0.7.2"
+    id("com.vk.compose-test-tag-applier") version "0.7.2"
+    id("com.vk.compose-test-tag-cleaner") version "0.7.2"
+    id("com.vk.compose-test-tag-drawer") version "0.7.2"
+    id("com.vk.compose-source-information-cleaner") version "0.7.2"
+    id("com.vk.composable-skippability-checker") version "0.7.2"
 }
 
 recomposeHighlighter {
