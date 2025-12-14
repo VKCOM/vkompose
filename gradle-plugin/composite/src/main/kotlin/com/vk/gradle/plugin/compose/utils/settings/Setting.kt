@@ -125,6 +125,9 @@ class SkippabilityChecksSetting : Setting() {
     private val strongSkippingSetting = StrongSkippingSetting()
 
     @JvmField
+    var isFirEnabled: Boolean = false
+
+    @JvmField
     var stabilityConfigurationPath: String? = null
 
     @JvmField

@@ -37,6 +37,12 @@ class ComposableSkippabilityCheckerPlugin : KotlinCompilerPluginSupportPlugin {
                         extension.isEnabled.toString()
                     )
                 )
+                add(
+                    SubpluginOption(
+                        "enabledFir",
+                        extension.isFirEnabled.toString()
+                    )
+                )
 
                 if (extension.stabilityConfigurationPath.isNullOrEmpty().not()) {
                     add(
