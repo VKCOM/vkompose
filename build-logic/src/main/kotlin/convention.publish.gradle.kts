@@ -11,7 +11,7 @@ group = "GROUP".prop
 version = "VERSION_NAME".prop
 
 mavenPublishing {
-    publishToMavenCentral(automaticRelease = true, validateDeployment = true)
+    publishToMavenCentral(automaticRelease = false, validateDeployment = true)
     coordinates("GROUP".prop, "POM_ARTIFACT_ID".prop, "VERSION_NAME".prop)
 
     pom {
