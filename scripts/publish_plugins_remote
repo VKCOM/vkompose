@@ -1,3 +1,5 @@
+#!/bin/bash
+
 function checkStatus() {
     if [[ $? != 0 ]]; then
       echo "Publish failed!"
@@ -24,6 +26,3 @@ function checkStatus() {
 ./gradlew :compiler-plugin:recompose:highlighter:runtime:publishToMavenCentral || checkStatus
 ./gradlew :compiler-plugin:recompose:logger:plugin:publishToMavenCentral || checkStatus
 ./gradlew :compiler-plugin:recompose:logger:runtime:publishToMavenCentral || checkStatus
-
-./gradlew :rules:common:publishToMavenCentral || checkStatus
-./gradlew :rules:detekt:publishToMavenCentral || checkStatus

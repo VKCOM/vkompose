@@ -19,6 +19,12 @@ class SkippabilityCommandLineProcessor : CommandLineProcessor {
                 required = false
             ),
             CliOption(
+                "enabledFir",
+                "<true|false>",
+                "Enable checking on FIR stage",
+                required = false
+            ),
+            CliOption(
                 "stabilityConfigurationPath",
                 "<path>",
                 "Path to stability configuration file",
@@ -46,6 +52,7 @@ class SkippabilityCommandLineProcessor : CommandLineProcessor {
     ) {
         when (option.optionName) {
             "enabled" -> configuration.put(ENABLED, value.toBoolean())
+            "enabledFir" -> configuration.put(ENABLED_FIR, value.toBoolean())
             "stabilityConfigurationPath" -> configuration.put(STABILITY_CONFIG_PATH_KEY, value)
             "strongSkippingEnabled" -> configuration.put(STRONG_SKIPPING_MODE_ENABLED, value.toBoolean())
             "strongSkippingFailFastEnabled" -> configuration.put(STRONG_SKIPPING_MODE_FAIL_FAST_ENABLED, value.toBoolean())
@@ -55,6 +62,7 @@ class SkippabilityCommandLineProcessor : CommandLineProcessor {
     companion object {
         val STABILITY_CONFIG_PATH_KEY = CompilerConfigurationKey<String>("Path to stability configuration file")
         val ENABLED = CompilerConfigurationKey<Boolean>("Enable checking stability of functions parameters that doesn`t allow them to be skippable")
+        val ENABLED_FIR = CompilerConfigurationKey<Boolean>("Enable checking on FIR stage")
         val STRONG_SKIPPING_MODE_ENABLED = CompilerConfigurationKey<Boolean>("Is strong skipping mode enabled")
         val STRONG_SKIPPING_MODE_FAIL_FAST_ENABLED = CompilerConfigurationKey<Boolean>("Fail compilation if there is any problem with strong skipping mode. Flag depends on strongSkippingModeEnabled")
     }
