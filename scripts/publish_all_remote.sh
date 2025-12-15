@@ -5,25 +5,25 @@ function checkStatus() {
     fi
 }
 
-./gradlew :gradle-plugin:sub-plugin:composable-skippability-checker:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :gradle-plugin:sub-plugin:compose-test-tag:applier:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :gradle-plugin:sub-plugin:compose-test-tag:cleaner:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :gradle-plugin:sub-plugin:compose-test-tag:drawer:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :gradle-plugin:sub-plugin:compose-source-information:cleaner:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :gradle-plugin:sub-plugin:recompose:highlighter:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :gradle-plugin:sub-plugin:recompose:logger:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :gradle-plugin:composite:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:composable-skippability-checker:plugin:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:compose-test-tag:cleaner:plugin:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:compose-test-tag:applier:plugin:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:compose-test-tag:applier:runtime:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:compose-test-tag:drawer:plugin:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:compose-test-tag:drawer:runtime:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:compose-source-information:cleaner:plugin:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:recompose:highlighter:plugin:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:recompose:highlighter:runtime:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:recompose:logger:plugin:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :compiler-plugin:recompose:logger:runtime:publishAllPublicationsToMavenCentralRepository || checkStatus
+./gradlew :gradle-plugin:sub-plugin:composable-skippability-checker:publishToMavenCentral || checkStatus
+./gradlew :gradle-plugin:sub-plugin:compose-test-tag:applier:publishToMavenCentral || checkStatus
+./gradlew :gradle-plugin:sub-plugin:compose-test-tag:cleaner:publishToMavenCentral || checkStatus
+./gradlew :gradle-plugin:sub-plugin:compose-test-tag:drawer:publishToMavenCentral || checkStatus
+./gradlew :gradle-plugin:sub-plugin:compose-source-information:cleaner:publishToMavenCentral || checkStatus
+./gradlew :gradle-plugin:sub-plugin:recompose:highlighter:publishToMavenCentral || checkStatus
+./gradlew :gradle-plugin:sub-plugin:recompose:logger:publishToMavenCentral || checkStatus
+./gradlew :gradle-plugin:composite:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:composable-skippability-checker:plugin:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:compose-test-tag:cleaner:plugin:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:compose-test-tag:applier:plugin:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:compose-test-tag:applier:runtime:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:compose-test-tag:drawer:plugin:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:compose-test-tag:drawer:runtime:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:compose-source-information:cleaner:plugin:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:recompose:highlighter:plugin:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:recompose:highlighter:runtime:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:recompose:logger:plugin:publishToMavenCentral || checkStatus
+./gradlew :compiler-plugin:recompose:logger:runtime:publishToMavenCentral || checkStatus
 
-./gradlew :rules:common:publishAllPublicationsToMavenCentralRepository || checkStatus
-./gradlew :rules:detekt:publishAllPublicationsToMavenCentralRepository || checkStatus
+./gradlew :rules:common:publishToMavenCentral || checkStatus
+./gradlew :rules:detekt:publishToMavenCentral || checkStatus

@@ -14,7 +14,7 @@ material = "1.9.0"
 ktlint = "0.48.2"
 detekt = "1.23.3"
 buildconfig = "5.1.0"
-publish = "0.34.0"
+publish = "0.35.0"
 
 [libraries]
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
