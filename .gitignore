@@ -9,3 +9,4 @@ build/
 .cxx
 local.properties
 /idea-plugin/compose-test-tag/.idea/
+scripts/etc/*
