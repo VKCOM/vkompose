@@ -13,12 +13,11 @@ import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirSimpleFunctionChecker
 import org.jetbrains.kotlin.fir.declarations.FirCallableDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
-import org.jetbrains.kotlin.fir.declarations.FirSimpleFunction
+import org.jetbrains.kotlin.fir.declarations.FirNamedFunction
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.declarations.hasAnnotationSafe
 import org.jetbrains.kotlin.fir.declarations.toAnnotationClassIdSafe
 import org.jetbrains.kotlin.fir.declarations.utils.isInline
-import org.jetbrains.kotlin.fir.declarations.utils.isLocal
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.arguments
 import org.jetbrains.kotlin.fir.types.UnexpandedTypeCheck
@@ -32,7 +31,7 @@ internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker(Mpp
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(
-        declaration: FirSimpleFunction,
+        declaration: FirNamedFunction,
     ) {
         val session = context.session
         val isComposable = declaration.hasAnnotationSafe(ComposeClassId.Composable, session)
@@ -96,7 +95,7 @@ internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker(Mpp
 
 
     @OptIn(UnexpandedTypeCheck::class)
-    private fun FirSimpleFunction.isRestartable(session: FirSession): Boolean = when {
+    private fun FirNamedFunction.isRestartable(session: FirSession): Boolean = when {
         isLocal -> false
         isInline -> false
         hasAnnotationSafe(ComposeClassId.NonRestartableComposable, session) -> false
@@ -107,7 +106,7 @@ internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker(Mpp
         else -> true
     }
 
-    private fun FirSimpleFunction.isComposableDelegatedAccessor(session: FirSession): Boolean =
+    private fun FirNamedFunction.isComposableDelegatedAccessor(session: FirSession): Boolean =
         origin == FirDeclarationOrigin.Delegated &&
                 body?.let {
                     val returnStatement = it.statements.singleOrNull() as? FirCallableDeclaration
@@ -115,7 +114,7 @@ internal object SkippabilitySimpleFunctionChecker : FirSimpleFunctionChecker(Mpp
                     target?.hasAnnotationSafe(ComposeClassId.Composable, session)
                 } == true
 
-    private val FirSimpleFunction.isLambda: Boolean
+    private val FirNamedFunction.isLambda: Boolean
         get() = name == SpecialNames.ANONYMOUS
 
     private val composePackage = Name.identifier("androidx.compose")

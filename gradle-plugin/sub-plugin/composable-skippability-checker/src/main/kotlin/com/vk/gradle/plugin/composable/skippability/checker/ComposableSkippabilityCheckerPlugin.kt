@@ -22,6 +22,10 @@ class ComposableSkippabilityCheckerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
 
+        kotlinCompilation.compileTaskProvider.configure {
+            compilerOptions.freeCompilerArgs.add("-Xcompiler-plugin-order=androidx.compose.compiler.plugins.kotlin>${getCompilerPluginId()}")
+        }
+
         val extension =
             project.extensions.findByType(ComposableSkippabilityCheckerExtension::class.java)
                 ?: project.extensions.create(

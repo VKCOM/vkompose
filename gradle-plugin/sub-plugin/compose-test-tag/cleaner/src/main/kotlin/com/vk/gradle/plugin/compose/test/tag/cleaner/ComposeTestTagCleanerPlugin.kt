@@ -19,6 +19,10 @@ class ComposeTestTagCleanerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
 
+        kotlinCompilation.compileTaskProvider.configure {
+            compilerOptions.freeCompilerArgs.add("-Xcompiler-plugin-order=${getCompilerPluginId()}>androidx.compose.compiler.plugins.kotlin")
+        }
+
         val extension =
             project.extensions.findByType(ComposeTestTagCleanerExtension::class.java)
                 ?: project.extensions.create(

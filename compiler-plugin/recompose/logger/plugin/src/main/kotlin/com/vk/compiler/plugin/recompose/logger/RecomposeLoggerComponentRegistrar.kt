@@ -1,24 +1,26 @@
 package com.vk.compiler.plugin.recompose.logger
 
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
-import org.jetbrains.kotlin.com.intellij.mock.MockProject
-import org.jetbrains.kotlin.com.intellij.openapi.extensions.LoadingOrder
-import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
+import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 
 @ExperimentalCompilerApi
-class RecomposeLoggerComponentRegistrar : ComponentRegistrar {
+class RecomposeLoggerComponentRegistrar : CompilerPluginRegistrar() {
 
-    override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
+    override val pluginId: String = "com.vk.recompose-logger.compiler-plugin"
+
+    override val supportsK2: Boolean = true
+    override fun ExtensionStorage.registerExtensions(
+        configuration: CompilerConfiguration
+    ) {
         if (configuration.get(RecomposeLoggerCommandLineProcessor.ENABLED, true)) {
             val logModifierChanges = configuration.get(RecomposeLoggerCommandLineProcessor.LOG_MODIFIER_CHANGES, true)
             val logFunctionChanges = configuration.get(RecomposeLoggerCommandLineProcessor.LOG_FUNCTION_CHANGES, true)
-            project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(RecomposeLoggerIrGeneration(logModifierChanges, logFunctionChanges), LoadingOrder.FIRST, project)
+            IrGenerationExtension.registerExtension(
+                RecomposeLoggerIrGeneration(logModifierChanges, logFunctionChanges)
+            )
         }
     }
-
-    override val supportsK2: Boolean = true
 
 }
