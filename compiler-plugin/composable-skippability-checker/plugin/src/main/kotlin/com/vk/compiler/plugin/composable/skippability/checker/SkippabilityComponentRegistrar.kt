@@ -1,5 +1,6 @@
 package com.vk.compiler.plugin.composable.skippability.checker
 
+import androidx.compose.compiler.plugins.kotlin.analysis.StabilityConfigParser
 import com.vk.compiler.plugin.composable.skippability.checker.ir.SkippabilityChecker
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity

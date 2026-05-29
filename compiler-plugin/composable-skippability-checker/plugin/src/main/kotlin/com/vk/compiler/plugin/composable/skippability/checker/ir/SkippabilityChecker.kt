@@ -1,7 +1,7 @@
 package com.vk.compiler.plugin.composable.skippability.checker.ir
 
-import com.vk.compiler.plugin.composable.skippability.checker.FqNameMatcher
-import com.vk.compiler.plugin.composable.skippability.checker.Messages
+import androidx.compose.compiler.plugins.kotlin.analysis.FqNameMatcher
+import androidx.compose.compiler.plugins.kotlin.analysis.StabilityInferencer
 import com.vk.compiler.plugin.composable.skippability.checker.Messages.REF_COMPARISON_FIX_EXPLANATION
 import com.vk.compiler.plugin.composable.skippability.checker.Messages.REMOVE_SKIPPABILITY_ANNOTATION
 import com.vk.compiler.plugin.composable.skippability.checker.Messages.SKIPPABILITY_FIX_EXPLANATION
@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
+import org.jetbrains.kotlin.platform.jvm.isJvm
 
 class SkippabilityChecker(
     private val isStrongSkippingModeEnabled: Boolean,
@@ -26,6 +27,7 @@ class SkippabilityChecker(
         val fixedSuppressedFunctions = mutableSetOf<ReportFunction>()
 
         val stabilityInferencer = StabilityInferencer(
+            pluginContext.platform.isJvm(),
             @OptIn(ObsoleteDescriptorBasedAPI::class) pluginContext.moduleDescriptor,
             stableTypeMatchers,
         )

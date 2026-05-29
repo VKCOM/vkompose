@@ -1,13 +1,55 @@
-package com.vk.compiler.plugin.composable.skippability.checker
+/*
+ * Copyright 2022 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+package androidx.compose.compiler.plugins.kotlin.analysis
+
+import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
+import java.math.BigDecimal
+import java.math.BigInteger
+import java.util.Locale
 import kotlin.coroutines.EmptyCoroutineContext
 
-internal object KnownStableConstructs {
+/**
+ * This is a registry of
+ *   1) functions and types that are defined outside of Compose that we know to be stable but cannot
+ *      annotate with `Stable` or `Immutable`
+ *   2) annotations that are defined outside of Compose that we know to be stable markers, but
+ *      cannot annotate with `StableMarker`
+ *
+ * For all of the functions and types listed in these collections, we associate them with a bitmask.
+ * This mask corresponds to the bitmask returned by
+ * [androidx.compose.compiler.plugins.kotlin.analysis.stabilityParamBitmask] for general classes.
+ * It defines how the generic parameters of a class/function influence its stability.
+ *
+ * A bit set to `1` in this mask indicates that the construct cannot be considered stable unless the
+ * generic type at that position is also a stable type. If a bit is set to `0`, it indicates that
+ * its corresponding generic type has no influence on whether the construct is stable.
+ *
+ * The bit at index 0 in this mask corresponds to the first generic type, and each subsequently
+ * higher bit moves one generic type further to the right as they're defined. If the construct
+ * doesn't have any generic types, it will have a mask of `0`.
+ */
+object KnownStableConstructs {
 
     val stableTypes = mapOf(
         Pair::class.qualifiedName!! to 0b11,
         Triple::class.qualifiedName!! to 0b111,
-        Comparator::class.qualifiedName!! to 0,
+        Comparator::class.qualifiedName!! to 0b1,
         Result::class.qualifiedName!! to 0b1,
         ClosedRange::class.qualifiedName!! to 0b1,
         ClosedFloatingPointRange::class.qualifiedName!! to 0b1,
@@ -30,6 +72,10 @@ internal object KnownStableConstructs {
         "dagger.Lazy" to 0b1,
         // Coroutines
         EmptyCoroutineContext::class.qualifiedName!! to 0,
+        // Java types
+        BigInteger::class.qualifiedName!! to 0,
+        BigDecimal::class.qualifiedName!! to 0,
+        Locale::class.qualifiedName!! to 0,
     )
 
     // TODO: buildList, buildMap, buildSet, etc.
@@ -49,5 +95,12 @@ internal object KnownStableConstructs {
         "kotlinx.collections.immutable.persistentListOf" to 0b1,
         "kotlinx.collections.immutable.persistentSetOf" to 0b1,
         "kotlinx.collections.immutable.persistentMapOf" to 0b11,
+    )
+
+    val stableMarkers = setOf(
+        ClassId(
+            FqName("com.google.errorprone.annotations"),
+            Name.identifier("Immutable")
+        )
     )
 }

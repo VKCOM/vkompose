@@ -1,4 +1,4 @@
-package com.vk.compiler.plugin.composable.skippability.checker
+package androidx.compose.compiler.plugins.kotlin.analysis
 
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
