@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.detekt)
     id("com.vk.composable-skippability-checker")
     id("com.vk.recompose-highlighter")
+    id("com.vk.recompose-logger")
 }
 
 android {
@@ -45,6 +46,10 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    buildFeatures {
+        compose = true
     }
 }
 
