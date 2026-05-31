@@ -12,7 +12,7 @@ class ComposableSkippabilityCheckerPlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun apply(target: Project) {
         target.extensions.create(
-            "composableSkippabilityChecker",
+            EXTENSION_NAME,
             ComposableSkippabilityCheckerExtension::class.java
         )
     }
@@ -29,7 +29,7 @@ class ComposableSkippabilityCheckerPlugin : KotlinCompilerPluginSupportPlugin {
         val extension =
             project.extensions.findByType(ComposableSkippabilityCheckerExtension::class.java)
                 ?: project.extensions.create(
-                    "composableSkippabilityChecker",
+                    EXTENSION_NAME,
                     ComposableSkippabilityCheckerExtension::class.java
                 )
 
@@ -80,5 +80,9 @@ class ComposableSkippabilityCheckerPlugin : KotlinCompilerPluginSupportPlugin {
         artifactId = "compiler-plugin",
         version = BuildConfig.VERSION
     )
+
+    companion object {
+        private const val EXTENSION_NAME = "composableSkippabilityChecker"
+    }
 
 }

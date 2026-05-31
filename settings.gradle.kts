@@ -6,6 +6,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         mavenLocal()
+        maven(url = File(rootDir, "libs"))
     }
 }
 dependencyResolutionManagement {
@@ -14,13 +15,14 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         mavenLocal()
+        maven(url = File(rootDir, "libs"))
     }
 }
 
 rootProject.name = "Compilers"
-//include(":sandbox")
-//include(":sandbox:app")
-//include(":sandbox:module")
+include(":sandbox")
+include(":sandbox:app")
+include(":sandbox:module")
 
 includeBuild("./rules")
 
