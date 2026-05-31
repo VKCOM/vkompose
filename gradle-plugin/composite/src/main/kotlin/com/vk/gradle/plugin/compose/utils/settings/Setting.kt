@@ -128,7 +128,7 @@ class SkippabilityChecksSetting : Setting() {
     var isFirEnabled: Boolean = false
 
     @JvmField
-    var stabilityConfigurationPath: String? = null
+    var stabilityConfigurationPath: MutableList<String> = mutableListOf()
 
     @JvmField
     var strongSkippingEnabled = false

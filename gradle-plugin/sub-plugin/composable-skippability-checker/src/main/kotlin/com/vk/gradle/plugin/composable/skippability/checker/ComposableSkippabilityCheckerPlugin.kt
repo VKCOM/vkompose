@@ -3,6 +3,7 @@ package com.vk.gradle.plugin.composable.skippability.checker
 import com.vk.composable_skippability_checker.composable_skippability_checker.BuildConfig
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.jetbrains.kotlin.gradle.plugin.FilesSubpluginOption
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
@@ -48,13 +49,10 @@ class ComposableSkippabilityCheckerPlugin : KotlinCompilerPluginSupportPlugin {
                     )
                 )
 
-                if (extension.stabilityConfigurationPath.isNullOrEmpty().not()) {
-                    add(
-                        SubpluginOption(
-                            "stabilityConfigurationPath",
-                            extension.stabilityConfigurationPath.orEmpty()
-                        )
-                    )
+                if (extension.stabilityConfigurationPath.isNotEmpty()) {
+                    extension.stabilityConfigurationPath.map { path ->
+                        add(SubpluginOption("stabilityConfigurationPath", path))
+                    }
                 }
                 add(
                     SubpluginOption(
