@@ -16,11 +16,11 @@
 
 @file:OptIn(UnsafeDuringIrConstructionAPI::class)
 
-package androidx.compose.compiler.plugins.kotlin.analysis
+package androidx.compose.compiler.plugins.kotlin.analysis.vk
 
-import androidx.compose.compiler.plugins.kotlin.ComposeFqNames
-import androidx.compose.compiler.plugins.kotlin.lower.annotationClass
-import androidx.compose.compiler.plugins.kotlin.lower.isSyntheticComposableFunction
+import androidx.compose.compiler.plugins.kotlin.vk.ComposeFqNames
+import androidx.compose.compiler.plugins.kotlin.lower.vk.annotationClass
+import androidx.compose.compiler.plugins.kotlin.lower.vk.isSyntheticComposableFunction
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
@@ -34,6 +34,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.util.isNullable
+import kotlin.collections.get
 
 sealed class Stability {
     // class Foo(val bar: Int)

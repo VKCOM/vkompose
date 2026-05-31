@@ -1,4 +1,4 @@
-package androidx.compose.compiler.plugins.kotlin.analysis
+package androidx.compose.compiler.plugins.kotlin.analysis.vk
 
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.compiler.plugins.kotlin
+package androidx.compose.compiler.plugins.kotlin.vk
 
 import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall

@@ -1,6 +1,6 @@
-package androidx.compose.compiler.plugins.kotlin.lower
+package androidx.compose.compiler.plugins.kotlin.lower.vk
 
-import androidx.compose.compiler.plugins.kotlin.ComposeFqNames.InternalPackage
+import androidx.compose.compiler.plugins.kotlin.vk.ComposeFqNames.InternalPackage
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType

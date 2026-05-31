@@ -1,7 +1,7 @@
 package com.vk.compiler.plugin.composable.skippability.checker.ir
 
-import androidx.compose.compiler.plugins.kotlin.analysis.FqNameMatcher
-import androidx.compose.compiler.plugins.kotlin.analysis.StabilityInferencer
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.FqNameMatcher
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.StabilityInferencer
 import com.vk.compiler.plugin.composable.skippability.checker.Messages.REF_COMPARISON_FIX_EXPLANATION
 import com.vk.compiler.plugin.composable.skippability.checker.Messages.REMOVE_SKIPPABILITY_ANNOTATION
 import com.vk.compiler.plugin.composable.skippability.checker.Messages.SKIPPABILITY_FIX_EXPLANATION

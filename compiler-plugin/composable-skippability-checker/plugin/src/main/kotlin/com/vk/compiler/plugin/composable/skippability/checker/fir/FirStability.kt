@@ -1,6 +1,6 @@
 package com.vk.compiler.plugin.composable.skippability.checker.fir
 
-import androidx.compose.compiler.plugins.kotlin.analysis.KnownStableConstructs
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.KnownStableConstructs
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassId
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Visibilities
@@ -37,7 +37,6 @@ import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.fir.types.isAny
 import org.jetbrains.kotlin.fir.types.isMarkedNullable
-import org.jetbrains.kotlin.fir.types.isNullableAny
 import org.jetbrains.kotlin.fir.types.isPrimitive
 import org.jetbrains.kotlin.fir.types.isString
 import org.jetbrains.kotlin.fir.types.isUnit

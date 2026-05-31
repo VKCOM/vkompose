@@ -1,7 +1,6 @@
 package com.vk.compiler.plugin.composable.skippability.checker
 
-import androidx.compose.compiler.plugins.kotlin.analysis.FqNameMatcher
-import androidx.compose.compiler.plugins.kotlin.analysis.StabilityConfigParser
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.StabilityConfigParser
 import com.vk.compiler.plugin.composable.skippability.checker.ir.SkippabilityChecker
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
@@ -10,7 +9,6 @@ import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import java.io.FileNotFoundException
 
 @ExperimentalCompilerApi
 class SkippabilityComponentRegistrar : CompilerPluginRegistrar() {

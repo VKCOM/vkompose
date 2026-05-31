@@ -1,4 +1,4 @@
-package androidx.compose.compiler.plugins.kotlin
+package androidx.compose.compiler.plugins.kotlin.vk
 
 import org.jetbrains.kotlin.name.Name
 

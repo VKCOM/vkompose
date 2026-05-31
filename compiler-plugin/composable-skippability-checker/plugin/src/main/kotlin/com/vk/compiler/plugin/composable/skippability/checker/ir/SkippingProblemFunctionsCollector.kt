@@ -1,7 +1,7 @@
 package com.vk.compiler.plugin.composable.skippability.checker.ir
 
-import androidx.compose.compiler.plugins.kotlin.analysis.StabilityInferencer
-import androidx.compose.compiler.plugins.kotlin.analysis.knownUnstable
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.StabilityInferencer
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.knownUnstable
 import com.vk.compiler.plugin.composable.skippability.checker.COMPOSE_PACKAGE
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.Composable
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.Composer
