@@ -20,9 +20,9 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Compilers"
-include(":sandbox")
-include(":sandbox:app")
-include(":sandbox:module")
+//include(":sandbox")
+//include(":sandbox:app")
+//include(":sandbox:module")
 
 includeBuild("./rules")
 
