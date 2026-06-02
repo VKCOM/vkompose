@@ -1,8 +1,14 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.detekt)
+    id("com.vk.composable-skippability-checker")
+    id("com.vk.recompose-highlighter")
+    id("com.vk.recompose-logger")
 }
 
 android {
@@ -32,19 +38,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-        val metricsPath = "${project.buildDir.absolutePath}/compose_metrics"
-        freeCompilerArgs += listOf(
-            "-P",
-            "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=$metricsPath",
-            "-P",
-            "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=$metricsPath"
-        )
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     packaging {
@@ -52,22 +47,27 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    //
-//    kotlin {
-//        sourceSets.all {
-//            languageSettings {
-//                languageVersion = "2.0"
-//            }
-//        }
-//    }
 
+    buildFeatures {
+        compose = true
+    }
+}
+
+tasks.withType<KotlinCompile> {
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            "-P",
+            "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=${project.layout.buildDirectory.asFile.get().absolutePath}/compose_metrics",
+            "-P",
+            "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=${project.layout.buildDirectory.asFile.get().absolutePath}/compose_metrics"
+        )
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
 }
 
 dependencies {
     implementation(platform(libs.compose.bom))
     androidTestImplementation(platform(libs.compose.bom))
-    kotlinCompilerPluginClasspath(project(":compiler-plugin:recompose:logger:plugin"))
-    implementation(project(":compiler-plugin:recompose:logger:runtime"))
     implementation(project(":sandbox:module"))
 
     implementation(libs.core.ktx)

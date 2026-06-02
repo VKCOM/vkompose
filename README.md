@@ -14,6 +14,7 @@ The repository contains utilities for Jetpack Compose, including Kotlin compiler
 | 0.7            | 2.1.0           |
 | 0.7.1          | 2.2.0           |
 | 0.7.2          | 2.2.21          |
+| 0.8.0          | 2.3.20          |
 
 Currently, the following compiler plugins are available:
 - Functions skippability checker: Determines [function skippability](https://github.com/androidx/androidx/blob/androidx-main/compose/compiler/design/compiler-metrics.md#functions-that-are-restartable-but-not-skippable) based on checking function parameters stability.
@@ -28,7 +29,7 @@ How to use?
 1. Apply Gradle plugin
 ```kotlin
 plugins {
-    id("com.vk.vkompose") version "0.7.2"
+    id("com.vk.vkompose") version "0.8.0"
 }
 ```
 
@@ -98,13 +99,13 @@ TestTagDrawConfig.isEnabled = true
 Besides these plugins are published separately. So if you want to use only one, you can do.
 ```kotlin
 plugins {
-    id("com.vk.recompose-highlighter") version "0.7.2"
-    id("com.vk.recompose-logger") version "0.7.2"
-    id("com.vk.compose-test-tag-applier") version "0.7.2"
-    id("com.vk.compose-test-tag-cleaner") version "0.7.2"
-    id("com.vk.compose-test-tag-drawer") version "0.7.2"
-    id("com.vk.compose-source-information-cleaner") version "0.7.2"
-    id("com.vk.composable-skippability-checker") version "0.7.2"
+    id("com.vk.recompose-highlighter") version "0.8.0"
+    id("com.vk.recompose-logger") version "0.8.0"
+    id("com.vk.compose-test-tag-applier") version "0.8.0"
+    id("com.vk.compose-test-tag-cleaner") version "0.8.0"
+    id("com.vk.compose-test-tag-drawer") version "0.8.0"
+    id("com.vk.compose-source-information-cleaner") version "0.8.0"
+    id("com.vk.composable-skippability-checker") version "0.8.0"
 }
 
 recomposeHighlighter {
@@ -209,6 +210,3 @@ vkompose:
 #### Strong skipping problems suppression since 0.6
 In the compiler plugin, detector rules and plugin functions, ideas can be suppressed by either of the suppressions: NonSkippableComposable or ParamsComparedByRef.
 The NonSkippableComposable suppression will be removed in the future. For now, if strong skip is enabled, the idea plugin will mark NonSkippableComposable as unused and you can easily switch to ParamsComparedByRef
-
-### Known issues
-- Idea plugin cannot draw a test tag marker for functions from other libraries if they have a default Modifier value and Modifier is not explicitly passes as an argument. For more see [KTIJ-27688](https://youtrack.jetbrains.com/issue/KTIJ-27688/Quick-documentation-shows-COMPILEDCODE-instead-of-the-real-default-value-for-compiled-code-with-sources)

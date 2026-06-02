@@ -1,3 +1,5 @@
+#!/bin/bash
+
 PROJECT_PATH="$(git rev-parse --show-toplevel)"
 
 ./gradlew :gradle-plugin:sub-plugin:composable-skippability-checker:publishAllPublicationsToPropertyRootRepository \

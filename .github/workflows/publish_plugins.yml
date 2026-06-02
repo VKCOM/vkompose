@@ -22,13 +22,13 @@ jobs:
       - name: Grant Permission to Execute Gradle
         run: chmod +x gradlew
       - name: Grant Permission to scripts
-        run: chmod +x ./scripts/publish_plugins_remote.sh
+        run: chmod +x ./scripts/publish_plugins_remote
 
       - name: Release build
         run: ./gradlew build
 
       - name: Publish to MavenCentral
-        run: ./scripts/publish_plugins_remote.sh
+        run: ./scripts/publish_plugins_remote
         env:
           REMOTE_REPO_PUBLIC_URL: ${{ secrets.REMOTE_REPO_PUBLIC_URL }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.REMOTE_REPO_PUBLIC_USER }}

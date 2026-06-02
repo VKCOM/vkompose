@@ -1,5 +1,7 @@
 package com.vk.compiler.plugin.composable.skippability.checker.ir
 
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.StabilityInferencer
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.knownUnstable
 import com.vk.compiler.plugin.composable.skippability.checker.COMPOSE_PACKAGE
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.Composable
 import com.vk.compiler.plugin.composable.skippability.checker.ComposeClassName.Composer
@@ -24,6 +26,7 @@ import org.jetbrains.kotlin.ir.expressions.IrValueAccessExpression
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.isUnit
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+import org.jetbrains.kotlin.ir.util.fileOrNull
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isLocal
 import org.jetbrains.kotlin.ir.util.kotlinFqName
@@ -75,9 +78,11 @@ internal class SkippingProblemFunctionsCollector(
         val function = functionInfo.function
         val problemParams = mutableSetOf<String>()
 
+        val fileContainingParameters = function.fileOrNull
+
         functionInfo.params.forEachIndexed { paramIndex, param ->
             val isRequired = functionInfo.paramsSetCount[paramIndex] < 1
-            val stability = stabilityInferencer.stabilityOf(param.varargElementType ?: param.type)
+            val stability = stabilityInferencer.stabilityOf(param.varargElementType ?: param.type, fileContainingDependent = fileContainingParameters)
             val isUnstable = stability.knownUnstable()
             val isUsed = functionInfo.usedParams[paramIndex]
             val paramType = functionInfo.paramsTypes[paramIndex]

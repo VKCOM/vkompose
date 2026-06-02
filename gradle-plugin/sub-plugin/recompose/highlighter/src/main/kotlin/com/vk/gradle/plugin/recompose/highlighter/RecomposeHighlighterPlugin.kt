@@ -21,6 +21,10 @@ class RecomposeHighlighterPlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
 
+        kotlinCompilation.compileTaskProvider.configure {
+            compilerOptions.freeCompilerArgs.add("-Xcompiler-plugin-order=${getCompilerPluginId()}>androidx.compose.compiler.plugins.kotlin")
+        }
+
         return project.provider {
             listOf(SubpluginOption("enabled", project.isPluginEnabled().toString()))
         }

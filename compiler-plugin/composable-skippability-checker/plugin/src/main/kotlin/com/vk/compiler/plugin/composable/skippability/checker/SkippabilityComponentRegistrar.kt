@@ -1,49 +1,53 @@
 package com.vk.compiler.plugin.composable.skippability.checker
 
+import androidx.compose.compiler.plugins.kotlin.analysis.vk.StabilityConfigParser
 import com.vk.compiler.plugin.composable.skippability.checker.ir.SkippabilityChecker
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
-import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.com.intellij.mock.MockProject
-import org.jetbrains.kotlin.com.intellij.openapi.extensions.LoadingOrder
-import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
+import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 
 @ExperimentalCompilerApi
-class SkippabilityComponentRegistrar : ComponentRegistrar {
+class SkippabilityComponentRegistrar : CompilerPluginRegistrar() {
 
-    override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
+    override val pluginId: String = "com.vk.composable-skippability-checker.compiler-plugin"
+
+    override val supportsK2: Boolean = true
+    override fun ExtensionStorage.registerExtensions(
+        configuration: CompilerConfiguration
+    ) {
         if (configuration.get(SkippabilityCommandLineProcessor.ENABLED, true)) {
 
             val messageCollector = configuration.get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
 
             val isStrongSkippingModeEnabled = configuration.get(SkippabilityCommandLineProcessor.STRONG_SKIPPING_MODE_ENABLED, false)
             val isStrongSkippingFailFastEnabled = configuration.get(SkippabilityCommandLineProcessor.STRONG_SKIPPING_MODE_FAIL_FAST_ENABLED, false)
-            val stabilityConfigPath = configuration.get(SkippabilityCommandLineProcessor.STABILITY_CONFIG_PATH_KEY, "")
-            val stableTypeMatchers = try {
-                StabilityConfigParser.fromFile(stabilityConfigPath).stableTypeMatchers
-            } catch (e: Exception) {
-                messageCollector.report(CompilerMessageSeverity.ERROR, e.message ?: "Error parsing stability configuration")
-                emptySet()
+            val stabilityConfigPaths = configuration.getList(SkippabilityCommandLineProcessor.STABILITY_CONFIG_PATH_KEY)
+            val stableTypeMatchers = stabilityConfigPaths.flatMapTo(mutableSetOf()) { path ->
+                try {
+                    StabilityConfigParser.fromFile(path).stableTypeMatchers
+                } catch (e: Exception) {
+                    messageCollector.report(
+                        CompilerMessageSeverity.WARNING,
+                        e.message ?: "Error parsing stability configuration"
+                    )
+                    emptySet()
+                }
             }
 
-            project.extensionArea.getExtensionPoint(IrGenerationExtension.extensionPointName)
-                .registerExtension(
-                    SkippabilityChecker(
-                        isStrongSkippingModeEnabled,
-                        isStrongSkippingFailFastEnabled,
-                        messageCollector,
-                        stableTypeMatchers
-                    ), LoadingOrder.LAST, project
+            IrGenerationExtension.registerExtension(
+                SkippabilityChecker(
+                    isStrongSkippingModeEnabled,
+                    isStrongSkippingFailFastEnabled,
+                    messageCollector,
+                    stableTypeMatchers
                 )
-
-//            FirExtensionRegistrarAdapter.registerExtension(project, SkippabilityCheckerFirExtensionRegistrar())
+            )
+            //            FirExtensionRegistrarAdapter.registerExtension(project, SkippabilityCheckerFirExtensionRegistrar())
         }
     }
-
-    override val supportsK2: Boolean = true
 
 }
